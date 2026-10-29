@@ -1,0 +1,18 @@
+# Face Recognition Attendance System - Dependencies
+# Install with: pip install -r requirements.txt
+
+# Core ML/AI
+tensorflow>=2.10.0
+numpy>=1.21.0
+
+# Face Detection & Recognition
+mtcnn>=0.1.1
+keras-facenet>=0.3.2
+deepface>=0.0.79
+mediapipe>=0.10.0
+
+# Image Processing
+opencv-python>=4.8.0
+Pillow>=9.0.0
+
+# Note: tkinter is built-in with Python on Windows

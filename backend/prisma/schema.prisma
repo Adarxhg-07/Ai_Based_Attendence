@@ -1,0 +1,505 @@
+// Prisma Schema for Smart Attendance Management System
+// SQLite for MVP (easy setup, no server required)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// ENUMS (SQLite doesn't support enums, using String with validation in code)
+// =============================================================================
+
+// UserRole: ADMIN, TEACHER
+// AttendanceStatus: PRESENT, ABSENT, LATE, EXCUSED
+// SessionStatus: DRAFT, IN_PROGRESS, SUBMITTED, FINALIZED
+// DayOfWeek: MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY
+// SemesterType: FALL, SPRING, SUMMER
+// AuditAction: CREATE, UPDATE, DELETE, LOGIN, LOGOUT, etc.
+
+// =============================================================================
+// CORE TABLES
+// =============================================================================
+
+/// User accounts (Admin and Teacher)
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  username        String    @unique
+  passwordHash    String    @map("password_hash")
+  role            String    @default("TEACHER") // ADMIN, TEACHER
+  firstName       String    @map("first_name")
+  lastName        String    @map("last_name")
+  phone           String?
+  isActive        Boolean   @default(true) @map("is_active")
+  lastLoginAt     DateTime? @map("last_login_at")
+  passwordChangedAt DateTime? @map("password_changed_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  // Relations
+  teacher         Teacher?
+  refreshTokens   RefreshToken[]
+  auditLogs       AuditLog[]
+  attendanceSessions AttendanceSession[] @relation("MarkedBy")
+
+  @@map("users")
+}
+
+/// Refresh tokens for JWT authentication
+model RefreshToken {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  tokenHash   String    @unique @map("token_hash")
+  expiresAt   DateTime  @map("expires_at")
+  isRevoked   Boolean   @default(false) @map("is_revoked")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  revokedAt   DateTime? @map("revoked_at")
+
+  // Relations
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+// =============================================================================
+// ACADEMIC STRUCTURE
+// =============================================================================
+
+/// Academic departments/disciplines
+model Department {
+  id          String    @id @default(uuid())
+  code        String    @unique
+  name        String
+  description String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Relations
+  teachers    Teacher[]
+  students    Student[]
+  courses     Course[]
+
+  @@map("departments")
+}
+
+/// Academic batches/cohorts
+model Batch {
+  id                      String    @id @default(uuid())
+  year                    Int       @unique
+  name                    String
+  startDate               DateTime? @map("start_date")
+  expectedGraduationDate  DateTime? @map("expected_graduation_date")
+  isActive                Boolean   @default(true) @map("is_active")
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @updatedAt @map("updated_at")
+  deletedAt               DateTime? @map("deleted_at")
+
+  // Relations
+  students    Student[]
+
+  @@map("batches")
+}
+
+/// Teacher profiles (extends User)
+model Teacher {
+  id              String    @id @default(uuid())
+  userId          String    @unique @map("user_id")
+  employeeId      String?   @unique @map("employee_id")
+  departmentId    String?   @map("department_id")
+  designation     String?
+  officeLocation  String?   @map("office_location")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  // Relations
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department      Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  courseAssignments TeacherCourseAssignment[]
+  attendanceSessions AttendanceSession[]
+
+  @@map("teachers")
+}
+
+/// Student information
+model Student {
+  id                  String    @id @default(uuid())
+  registrationNumber  String    @unique @map("registration_number")
+  firstName           String    @map("first_name")
+  lastName            String    @map("last_name")
+  email               String?   @unique
+  phone               String?
+  passwordHash        String?   @map("password_hash")
+  departmentId        String?   @map("department_id")
+  batchId             String?   @map("batch_id")
+  enrollmentDate      DateTime  @default(now()) @map("enrollment_date")
+  isActive            Boolean   @default(true) @map("is_active")
+  profileImagePath    String?   @map("profile_image_path")
+  metadata            String?   // JSON stored as string
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  deletedAt           DateTime? @map("deleted_at")
+
+  // Relations
+  department          Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  batch               Batch?      @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  faceImages          StudentFaceImage[]
+  faceEncodings       StudentFaceEncoding[]
+  enrollments         StudentEnrollment[]
+  attendanceRecords   AttendanceRecord[]
+
+  @@map("students")
+}
+
+/// Student facial images for recognition
+model StudentFaceImage {
+  id              String    @id @default(uuid())
+  studentId       String    @map("student_id")
+  imagePath       String    @map("image_path")
+  imageFilename   String    @map("image_filename")
+  imageHash       String?   @map("image_hash")
+  fileSizeBytes   Int?      @map("file_size_bytes")
+  imageWidth      Int?      @map("image_width")
+  imageHeight     Int?      @map("image_height")
+  isPrimary       Boolean   @default(false) @map("is_primary")
+  qualityScore    Float?    @map("quality_score")
+  isVerified      Boolean   @default(false) @map("is_verified")
+  capturedAt      DateTime? @map("captured_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  // Relations
+  student         Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  encodings       StudentFaceEncoding[]
+
+  @@map("student_face_images")
+}
+
+/// Student face encodings for recognition (stored as binary/base64)
+model StudentFaceEncoding {
+  id              String    @id @default(uuid())
+  studentId       String    @map("student_id")
+  faceImageId     String?   @map("face_image_id")
+  encodingData    String    @map("encoding_data") // Base64 encoded face embedding
+  detectorType    String    @map("detector_type") // MTCNN, DeepFace, etc.
+  modelVersion    String?   @map("model_version")
+  confidence      Float?
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  student         Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  faceImage       StudentFaceImage? @relation(fields: [faceImageId], references: [id], onDelete: SetNull)
+
+  @@map("student_face_encodings")
+}
+
+// =============================================================================
+// COURSES AND SCHEDULING
+// =============================================================================
+
+/// Academic courses
+model Course {
+  id              String    @id @default(uuid())
+  code            String    @unique
+  name            String
+  description     String?
+  departmentId    String?   @map("department_id")
+  creditHours     Int       @default(3) @map("credit_hours")
+  isActive        Boolean   @default(true) @map("is_active")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  // Relations
+  department      Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  offerings       CourseOffering[]
+
+  @@map("courses")
+}
+
+/// Academic sessions (semesters)
+model AcademicSession {
+  id              String    @id @default(uuid())
+  name            String
+  year            Int
+  semester        String    // FALL, SPRING, SUMMER
+  startDate       DateTime  @map("start_date")
+  endDate         DateTime  @map("end_date")
+  isCurrent       Boolean   @default(false) @map("is_current")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  // Relations
+  courseOfferings CourseOffering[]
+
+  @@unique([year, semester])
+  @@map("academic_sessions")
+}
+
+/// Course offerings (course in a specific session/section)
+model CourseOffering {
+  id              String    @id @default(uuid())
+  courseId        String    @map("course_id")
+  sessionId       String    @map("session_id")
+  section         String    @default("A")
+  maxCapacity     Int       @default(50) @map("max_capacity")
+  isActive        Boolean   @default(true) @map("is_active")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  // Relations
+  course          Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  session         AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  teacherAssignments TeacherCourseAssignment[]
+  studentEnrollments StudentEnrollment[]
+  schedules       Schedule[]
+  attendanceSessions AttendanceSession[]
+
+  @@unique([courseId, sessionId, section])
+  @@map("course_offerings")
+}
+
+/// Teacher course assignments
+model TeacherCourseAssignment {
+  id                  String    @id @default(uuid())
+  teacherId           String    @map("teacher_id")
+  courseOfferingId    String    @map("course_offering_id")
+  isPrimary           Boolean   @default(true) @map("is_primary")
+  assignedAt          DateTime  @default(now()) @map("assigned_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  teacher             Teacher   @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  courseOffering      CourseOffering @relation(fields: [courseOfferingId], references: [id], onDelete: Cascade)
+
+  @@unique([teacherId, courseOfferingId])
+  @@map("teacher_course_assignments")
+}
+
+/// Student enrollments in courses
+model StudentEnrollment {
+  id                  String    @id @default(uuid())
+  studentId           String    @map("student_id")
+  courseOfferingId    String    @map("course_offering_id")
+  enrolledAt          DateTime  @default(now()) @map("enrolled_at")
+  droppedAt           DateTime? @map("dropped_at")
+  status              String    @default("enrolled") // enrolled, dropped, completed
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  student             Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  courseOffering      CourseOffering @relation(fields: [courseOfferingId], references: [id], onDelete: Cascade)
+  attendanceRecords   AttendanceRecord[]
+
+  @@unique([studentId, courseOfferingId])
+  @@map("student_enrollments")
+}
+
+/// Physical classroom locations
+model Classroom {
+  id              String    @id @default(uuid())
+  roomId          String    @unique @map("room_id")
+  name            String
+  building        String?
+  floor           Int?
+  capacity        Int?
+  hasProjector    Boolean   @default(true) @map("has_projector")
+  hasCamera       Boolean   @default(false) @map("has_camera")
+  metadata        String?   // JSON stored as string
+  isActive        Boolean   @default(true) @map("is_active")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  // Relations
+  schedules       Schedule[]
+  attendanceSessions AttendanceSession[]
+
+  @@map("classrooms")
+}
+
+/// Timetable/schedule entries
+model Schedule {
+  id                  String    @id @default(uuid())
+  courseOfferingId    String    @map("course_offering_id")
+  classroomId         String?   @map("classroom_id")
+  dayOfWeek           String    @map("day_of_week") // MONDAY, TUESDAY, etc.
+  startTime           String    @map("start_time") // HH:MM format
+  endTime             String    @map("end_time")   // HH:MM format
+  isActive            Boolean   @default(true) @map("is_active")
+  effectiveFrom       DateTime? @map("effective_from")
+  effectiveUntil      DateTime? @map("effective_until")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  deletedAt           DateTime? @map("deleted_at")
+
+  // Relations
+  courseOffering      CourseOffering @relation(fields: [courseOfferingId], references: [id], onDelete: Cascade)
+  classroom           Classroom? @relation(fields: [classroomId], references: [id], onDelete: SetNull)
+  attendanceSessions  AttendanceSession[]
+
+  @@map("schedules")
+}
+
+// =============================================================================
+// ATTENDANCE
+// =============================================================================
+
+/// Attendance sessions (one class meeting)
+model AttendanceSession {
+  id                      String    @id @default(uuid())
+  scheduleId              String?   @map("schedule_id")
+  courseOfferingId        String    @map("course_offering_id")
+  teacherId               String    @map("teacher_id")
+  classroomId             String?   @map("classroom_id")
+  sessionDate             DateTime  @map("session_date")
+  actualStartTime         DateTime? @map("actual_start_time")
+  actualEndTime           DateTime? @map("actual_end_time")
+  status                  String    @default("DRAFT") // DRAFT, IN_PROGRESS, SUBMITTED, FINALIZED
+  detectionMethod         String?   @map("detection_method")
+  recognitionThreshold    Float?    @map("recognition_threshold")
+  notes                   String?
+  markedById              String    @map("marked_by")
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @updatedAt @map("updated_at")
+  submittedAt             DateTime? @map("submitted_at")
+  finalizedAt             DateTime? @map("finalized_at")
+
+  // Relations
+  schedule                Schedule?     @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+  courseOffering          CourseOffering @relation(fields: [courseOfferingId], references: [id], onDelete: Cascade)
+  teacher                 Teacher       @relation(fields: [teacherId], references: [id], onDelete: Restrict)
+  classroom               Classroom?    @relation(fields: [classroomId], references: [id], onDelete: SetNull)
+  markedBy                User          @relation("MarkedBy", fields: [markedById], references: [id], onDelete: Restrict)
+  attendanceRecords       AttendanceRecord[]
+  attendanceImages        AttendanceImage[]
+  liveSnapshots           AttendanceSnapshot[]
+  liveCaptureActive       Boolean   @default(false) @map("live_capture_active")
+  liveCaptureStartedAt    DateTime? @map("live_capture_started_at")
+  liveCaptureStoppedAt    DateTime? @map("live_capture_stopped_at")
+
+  @@unique([courseOfferingId, sessionDate, scheduleId])
+  @@map("attendance_sessions")
+}
+
+/// Per-minute snapshots taken by the camera during a live attendance session.
+/// On stop, the backend tallies recognizedIds across all snapshots and marks
+/// a student PRESENT iff they appear in >= threshold (default 60%) of snapshots.
+model AttendanceSnapshot {
+  id              String   @id @default(uuid())
+  sessionId       String   @map("session_id")
+  capturedAt      DateTime @default(now()) @map("captured_at")
+  imagePath       String?  @map("image_path")
+  facesDetected   Int      @default(0) @map("faces_detected")
+  facesRecognized Int      @default(0) @map("faces_recognized")
+  recognizedIds   String   @default("[]") @map("recognized_ids") // JSON array of student IDs
+  metadata        String?  // JSON blob of raw AI result for debugging
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  session         AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("attendance_snapshots")
+}
+
+/// Attendance images (class photos)
+model AttendanceImage {
+  id                      String    @id @default(uuid())
+  attendanceSessionId     String    @map("attendance_session_id")
+  originalImagePath       String    @map("original_image_path")
+  annotatedImagePath      String?   @map("annotated_image_path")
+  thumbnailPath           String?   @map("thumbnail_path")
+  imageWidth              Int?      @map("image_width")
+  imageHeight             Int?      @map("image_height")
+  fileSizeBytes           Int?      @map("file_size_bytes")
+  facesDetected           Int       @default(0) @map("faces_detected")
+  facesRecognized         Int       @default(0) @map("faces_recognized")
+  capturedAt              DateTime  @default(now()) @map("captured_at")
+  metadata                String?   // JSON stored as string
+  createdAt               DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  attendanceSession       AttendanceSession @relation(fields: [attendanceSessionId], references: [id], onDelete: Cascade)
+  attendanceRecords       AttendanceRecord[]
+
+  @@map("attendance_images")
+}
+
+/// Individual student attendance records
+model AttendanceRecord {
+  id                      String    @id @default(uuid())
+  attendanceSessionId     String    @map("attendance_session_id")
+  studentId               String    @map("student_id")
+  enrollmentId            String?   @map("enrollment_id")
+  status                  String    @default("ABSENT") // PRESENT, ABSENT, LATE, EXCUSED
+  markedBy                String    @default("automatic") @map("marked_by") // automatic, manual, modified
+  recognitionConfidence   Float?    @map("recognition_confidence")
+  recognitionDistance     Float?    @map("recognition_distance")
+  attendanceImageId       String?   @map("attendance_image_id")
+  faceLocation            String?   @map("face_location") // JSON: {x1, y1, x2, y2}
+  checkInTime             DateTime? @map("check_in_time")
+  notes                   String?
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  attendanceSession       AttendanceSession @relation(fields: [attendanceSessionId], references: [id], onDelete: Cascade)
+  student                 Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  enrollment              StudentEnrollment? @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
+  attendanceImage         AttendanceImage? @relation(fields: [attendanceImageId], references: [id], onDelete: SetNull)
+
+  @@unique([attendanceSessionId, studentId])
+  @@map("attendance_records")
+}
+
+// =============================================================================
+// AUDIT AND LOGGING
+// =============================================================================
+
+/// Audit logs for all system actions
+model AuditLog {
+  id              String    @id @default(uuid())
+  userId          String?   @map("user_id")
+  action          String    // CREATE, UPDATE, DELETE, LOGIN, etc.
+  entityType      String    @map("entity_type")
+  entityId        String?   @map("entity_id")
+  oldValues       String?   @map("old_values") // JSON stored as string
+  newValues       String?   @map("new_values") // JSON stored as string
+  ipAddress       String?   @map("ip_address")
+  userAgent       String?   @map("user_agent")
+  sessionId       String?   @map("session_id")
+  additionalInfo  String?   @map("additional_info") // JSON stored as string
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}
+
+/// System configuration settings
+model SystemSetting {
+  id          String    @id @default(uuid())
+  key         String    @unique
+  value       String?
+  valueType   String    @default("string") @map("value_type") // string, number, boolean, json
+  description String?
+  isSensitive Boolean   @default(false) @map("is_sensitive")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}
