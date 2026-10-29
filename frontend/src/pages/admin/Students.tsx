@@ -265,7 +265,7 @@ export default function Students() {
   ];
 
   return (
-    <div className="p-6">
+    <div>
       <PageHeader
         title="Students"
         subtitle={`${totalItems} total students`}
@@ -273,7 +273,7 @@ export default function Students() {
 
       <div className="mb-6 flex gap-4">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/30" size={20} />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2" style={{ color: '#36454F' }} size={20} />
           <input
             type="text"
             placeholder="Search students..."

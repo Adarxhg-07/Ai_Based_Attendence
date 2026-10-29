@@ -25,29 +25,70 @@ export function DataTable<T extends Record<string, any>>({
 }: DataTableProps<T>) {
   if (loading) {
     return (
-      <div className="glass p-12 text-center">
-        <div className="w-8 h-8 border-2 border-maroon-700/30 border-t-maroon-600 rounded-full animate-spin mx-auto" />
-        <p className="mt-3 text-sm text-white/40">Loading...</p>
+      <div
+        style={{
+          background: '#FFFFFF',
+          border: '3px solid #111',
+          borderRadius: '0.5rem',
+          boxShadow: '4px 4px 0 #111',
+          padding: '3rem',
+          textAlign: 'center',
+        }}
+      >
+        <div
+          style={{ width: 32, height: 32, border: '3px solid #D1D1D1', borderTop: '3px solid #CC0000', borderRadius: '50%', margin: '0 auto' }}
+          className="animate-spin"
+        />
+        <p style={{ marginTop: '0.75rem', fontSize: '0.875rem', color: '#36454F', fontWeight: 500 }}>Loading...</p>
       </div>
     );
   }
 
   if (data.length === 0) {
     return (
-      <div className="glass p-12 text-center">
-        <p className="text-white/40">No data found</p>
+      <div
+        style={{
+          background: '#FFFFFF',
+          border: '3px solid #111',
+          borderRadius: '0.5rem',
+          boxShadow: '4px 4px 0 #111',
+          padding: '3rem',
+          textAlign: 'center',
+        }}
+      >
+        <p style={{ color: '#36454F', fontWeight: 600 }}>No data found</p>
       </div>
     );
   }
 
   return (
-    <div className="glass overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="min-w-full">
+    <div
+      style={{
+        background: '#FFFFFF',
+        border: '3px solid #111',
+        borderRadius: '0.5rem',
+        boxShadow: '4px 4px 0 #111',
+        overflow: 'hidden',
+      }}
+    >
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ minWidth: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr className="border-b border-white/[0.06]">
+            <tr style={{ background: '#111111' }}>
               {columns.map((col) => (
-                <th key={col.key} className="px-4 py-3 text-left text-xs font-semibold text-white/40 uppercase tracking-wider">
+                <th
+                  key={col.key}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    textAlign: 'left',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    color: '#FFFFFF',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
                   {col.header || col.label}
                 </th>
               ))}
@@ -58,12 +99,28 @@ export function DataTable<T extends Record<string, any>>({
               <tr
                 key={(item as any).id || idx}
                 onClick={() => onRowClick?.(item)}
-                className={`border-b border-white/[0.04] transition-colors ${
-                  onRowClick ? 'cursor-pointer hover:bg-white/[0.03]' : ''
-                }`}
+                style={{
+                  borderTop: '1px solid #D1D1D1',
+                  cursor: onRowClick ? 'pointer' : 'default',
+                  transition: 'background 0.15s ease-out',
+                }}
+                onMouseEnter={(e) => {
+                  if (onRowClick) e.currentTarget.style.background = '#FFD700';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}
               >
                 {columns.map((col) => (
-                  <td key={col.key} className="px-4 py-3 text-sm text-white/70 whitespace-nowrap">
+                  <td
+                    key={col.key}
+                    style={{
+                      padding: '0.75rem 1rem',
+                      fontSize: '0.875rem',
+                      color: '#111111',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
                     {col.render ? col.render(item) : item[col.key]}
                   </td>
                 ))}
@@ -74,27 +131,50 @@ export function DataTable<T extends Record<string, any>>({
       </div>
 
       {pagination && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-3 border-t border-white/[0.06]">
-          <span className="text-sm text-white/30">
-            {pagination.totalItems} total items
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0.75rem 1rem',
+            borderTop: '2px solid #111',
+            background: '#F0F0F0',
+          }}
+        >
+          <span style={{ fontSize: '0.75rem', color: '#36454F', fontFamily: "'JetBrains Mono', monospace" }}>
+            {pagination.totalItems} ITEMS
           </span>
-          <div className="flex items-center gap-2">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <button
               onClick={() => pagination.onPageChange(pagination.page - 1)}
               disabled={pagination.page <= 1}
-              className="p-1.5 rounded-lg hover:bg-white/[0.06] disabled:opacity-30 disabled:cursor-not-allowed text-white/50"
+              style={{
+                padding: '0.375rem',
+                background: pagination.page <= 1 ? '#D1D1D1' : '#111',
+                color: pagination.page <= 1 ? '#999' : '#FFF',
+                border: '2px solid #111',
+                borderRadius: '0.375rem',
+                cursor: pagination.page <= 1 ? 'not-allowed' : 'pointer',
+              }}
             >
-              <ChevronLeft size={18} />
+              <ChevronLeft size={16} />
             </button>
-            <span className="text-sm text-white/50 min-w-[60px] text-center">
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#111', minWidth: '60px', textAlign: 'center', fontFamily: "'JetBrains Mono', monospace" }}>
               {pagination.page} / {pagination.totalPages}
             </span>
             <button
               onClick={() => pagination.onPageChange(pagination.page + 1)}
               disabled={pagination.page >= pagination.totalPages}
-              className="p-1.5 rounded-lg hover:bg-white/[0.06] disabled:opacity-30 disabled:cursor-not-allowed text-white/50"
+              style={{
+                padding: '0.375rem',
+                background: pagination.page >= pagination.totalPages ? '#D1D1D1' : '#111',
+                color: pagination.page >= pagination.totalPages ? '#999' : '#FFF',
+                border: '2px solid #111',
+                borderRadius: '0.375rem',
+                cursor: pagination.page >= pagination.totalPages ? 'not-allowed' : 'pointer',
+              }}
             >
-              <ChevronRight size={18} />
+              <ChevronRight size={16} />
             </button>
           </div>
         </div>

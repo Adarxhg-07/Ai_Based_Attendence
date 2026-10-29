@@ -18,7 +18,7 @@ from docx.enum.section import WD_SECTION, WD_ORIENTATION
 HERE = os.path.dirname(os.path.abspath(__file__))
 ASSETS = os.path.join(HERE, "assets")
 OUT = os.path.join(HERE, "FYP_Report.docx")
-LOGO = os.path.join(ASSETS, "giki_logo.jpeg")
+LOGO = os.path.join(ASSETS, "rvce_logo.jpeg")
 
 
 # =============================================================================

@@ -15,18 +15,17 @@ import {
   ArrowRight,
   LogOut,
   Search,
-  Filter,
   Eye,
   EyeOff,
   User,
   ShieldCheck,
   AlertTriangle,
-  ChevronRight,
   RefreshCw,
   Building2,
   CalendarDays,
   Check,
-  Award
+  Award,
+  Scan
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -98,7 +97,6 @@ interface AttendancePayload {
   history: HistoryLogItem[];
 }
 
-// Sample quick test registration numbers for testing
 const DEMO_STUDENTS = [
   { reg: '2023011', name: 'Abdul Moiz' },
   { reg: '2023034', name: 'Abdullah Anwer' },
@@ -110,14 +108,12 @@ export default function StudentPortal() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Navigation / Step state: 'LOOKUP' | 'SETUP_PASSWORD' | 'ENTER_PASSWORD' | 'DASHBOARD'
   const [step, setStep] = useState<'LOOKUP' | 'SETUP_PASSWORD' | 'ENTER_PASSWORD' | 'DASHBOARD'>('LOOKUP');
 
   const [regInput, setRegInput] = useState(searchParams.get('reg') || '');
   const [studentInfo, setStudentInfo] = useState<StudentInfo | null>(null);
   const [attendanceData, setAttendanceData] = useState<AttendancePayload | null>(null);
 
-  // Form states
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -125,12 +121,10 @@ export default function StudentPortal() {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  // Dashboard filtering
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED'>('ALL');
   const [courseFilter, setCourseFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Change password modal
   const [isChangePassOpen, setIsChangePassOpen] = useState(false);
   const [currentPass, setCurrentPass] = useState('');
   const [newPass, setNewPass] = useState('');
@@ -138,16 +132,19 @@ export default function StudentPortal() {
   const [passChangeLoading, setPassChangeLoading] = useState(false);
   const [passChangeMsg, setPassChangeMsg] = useState('');
 
-  // Check if session token exists in localStorage for a student
   useEffect(() => {
+    const urlReg = searchParams.get('reg');
     const savedReg = localStorage.getItem('student_reg');
     const savedToken = localStorage.getItem('student_token');
-    if (savedReg && savedToken) {
+
+    if (urlReg) {
+      setRegInput(urlReg);
+      handleLookup(urlReg);
+    } else if (savedReg && savedToken) {
       loadAttendance(savedReg);
     }
   }, []);
 
-  // 1. Step: Lookup Registration Number
   const handleLookup = async (regToLookup?: string) => {
     const targetReg = (regToLookup || regInput).trim();
     if (!targetReg) {
@@ -175,7 +172,6 @@ export default function StudentPortal() {
     }
   };
 
-  // 2A. Step: Set Password (First time)
   const handleSetupPassword = async (e: FormEvent) => {
     e.preventDefault();
     if (!studentInfo) return;
@@ -210,7 +206,6 @@ export default function StudentPortal() {
     }
   };
 
-  // 2B. Step: Login with existing password
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     if (!studentInfo) return;
@@ -241,7 +236,6 @@ export default function StudentPortal() {
     }
   };
 
-  // 3. Load full attendance data
   const loadAttendance = async (reg: string) => {
     setLoading(true);
     setError('');
@@ -252,7 +246,6 @@ export default function StudentPortal() {
       setStep('DASHBOARD');
     } catch (err) {
       setError(getErrorMessage(err));
-      // If token expired or invalid, reset to lookup
       localStorage.removeItem('student_token');
       localStorage.removeItem('student_reg');
       setStep('LOOKUP');
@@ -261,19 +254,17 @@ export default function StudentPortal() {
     }
   };
 
-  // Logout / Switch Student
   const handleLogout = () => {
     localStorage.removeItem('student_token');
     localStorage.removeItem('student_reg');
-    setAttendanceData(null);
     setStudentInfo(null);
+    setAttendanceData(null);
     setPassword('');
     setConfirmPassword('');
-    setError('');
+    setRegInput('');
     setStep('LOOKUP');
   };
 
-  // Handle Change Password
   const handleChangePassword = async (e: FormEvent) => {
     e.preventDefault();
     if (!studentInfo) return;
@@ -295,7 +286,8 @@ export default function StudentPortal() {
         currentPassword: currentPass,
         newPassword: newPass,
       });
-      setSuccessMsg('Password successfully updated!');
+
+      setSuccessMsg('Password updated successfully!');
       setIsChangePassOpen(false);
       setCurrentPass('');
       setNewPass('');
@@ -308,7 +300,6 @@ export default function StudentPortal() {
     }
   };
 
-  // Filter history items
   const filteredHistory = (attendanceData?.history || []).filter((item) => {
     const matchesStatus = statusFilter === 'ALL' || item.status === statusFilter;
     const matchesCourse = courseFilter === 'ALL' || item.courseCode === courseFilter;
@@ -322,74 +313,215 @@ export default function StudentPortal() {
   });
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white flex flex-col relative overflow-hidden font-sans selection:bg-maroon-600 selection:text-white">
-      {/* Background ambient lighting */}
-      <div className="absolute top-[-25%] left-[-15%] w-[650px] h-[650px] rounded-full bg-maroon-700/10 blur-[140px] pointer-events-none" />
-      <div className="absolute top-[40%] right-[-20%] w-[700px] h-[700px] rounded-full bg-blue-900/10 blur-[160px] pointer-events-none" />
-      <div className="absolute bottom-[-20%] left-[20%] w-[500px] h-[500px] rounded-full bg-amber-600/5 blur-[120px] pointer-events-none" />
+    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: '#FAFAFA', color: '#111111' }}>
 
-      {/* Top Navigation Bar */}
-      <header className="border-b border-white/[0.06] backdrop-blur-md bg-[#0a0a0f]/60 sticky top-0 z-30 px-4 sm:px-8 py-3.5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-maroon-700 to-maroon-900 border border-maroon-600/30 flex items-center justify-center shadow-lg shadow-maroon-950/40">
-            <GraduationCap className="text-amber-400" size={22} />
+      {/* ===== TOP NAVIGATION BAR — BRUTAL ===== */}
+      <header
+        style={{
+          height: '64px',
+          background: '#FFFFFF',
+          borderBottom: '3px solid #111111',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 1.5rem',
+          position: 'sticky',
+          top: 0,
+          zIndex: 40,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div
+            style={{
+              width: 34,
+              height: 34,
+              background: '#CC0000',
+              border: '2px solid #111',
+              borderRadius: '0.375rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '2px 2px 0 #111',
+            }}
+          >
+            <Scan size={18} color="#FFFFFF" strokeWidth={2.5} />
           </div>
-          <div>
-            <h1 className="text-base font-bold bg-gradient-to-r from-white via-white/90 to-white/60 bg-clip-text text-transparent">
-              Student Attendance Portal
-            </h1>
-            <p className="text-[11px] text-white/40">Smart Attendance System • University Portal</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontSize: '1.125rem', fontWeight: 700, color: '#111', letterSpacing: '-0.02em' }}>
+              SMARTATTEND
+            </span>
+            <span
+              style={{
+                background: '#FFD700',
+                color: '#111111',
+                border: '2px solid #111111',
+                borderRadius: '0.375rem',
+                fontSize: '0.6875rem',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                padding: '2px 8px',
+                boxShadow: '1px 1px 0 #111',
+              }}
+            >
+              STUDENT PORTAL
+            </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           {step === 'DASHBOARD' && studentInfo && (
-            <div className="hidden sm:flex items-center gap-3 mr-2 px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.06]">
-              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs text-white/70 font-medium">{studentInfo.fullName}</span>
-              <span className="px-2 py-0.5 rounded-full bg-maroon-600/30 text-amber-300 text-[10px] font-mono font-semibold border border-maroon-500/30">
+            <div className="hidden sm:flex" style={{ alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#111' }}>
+                {studentInfo.fullName}
+              </span>
+              <span
+                style={{
+                  background: '#FFFFFF',
+                  color: '#111',
+                  border: '2px solid #111',
+                  borderRadius: '0.375rem',
+                  padding: '2px 8px',
+                  fontSize: '0.75rem',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontWeight: 700,
+                  boxShadow: '2px 2px 0 #111',
+                }}
+              >
                 {studentInfo.registrationNumber}
               </span>
             </div>
           )}
 
           {step === 'DASHBOARD' ? (
-            <div className="flex items-center gap-2">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <button
                 onClick={() => setIsChangePassOpen(true)}
-                className="px-3 py-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-white/70 hover:text-white text-xs font-medium border border-white/[0.08] transition flex items-center gap-1.5"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.375rem',
+                  padding: '6px 12px',
+                  background: '#FFFFFF',
+                  color: '#111111',
+                  border: '2px solid #111111',
+                  borderRadius: '0.375rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  cursor: 'pointer',
+                  boxShadow: '2px 2px 0 #111111',
+                  transition: 'all 0.15s ease-out',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#FFD700';
+                  e.currentTarget.style.transform = 'translate(-1px, -1px)';
+                  e.currentTarget.style.boxShadow = '3px 3px 0 #111111';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#FFFFFF';
+                  e.currentTarget.style.transform = 'none';
+                  e.currentTarget.style.boxShadow = '2px 2px 0 #111111';
+                }}
                 title="Change Password"
               >
-                <KeyRound size={13} />
-                <span className="hidden sm:inline">Change Password</span>
+                <KeyRound size={14} />
+                <span className="hidden sm:inline">Password</span>
               </button>
+
               <button
                 onClick={handleLogout}
-                className="px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-medium border border-rose-500/20 transition flex items-center gap-1.5"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.375rem',
+                  padding: '6px 14px',
+                  background: '#CC0000',
+                  color: '#FFFFFF',
+                  border: '2px solid #111111',
+                  borderRadius: '0.375rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  cursor: 'pointer',
+                  boxShadow: '2px 2px 0 #111111',
+                  transition: 'all 0.15s ease-out',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#AA0000';
+                  e.currentTarget.style.transform = 'translate(-1px, -1px)';
+                  e.currentTarget.style.boxShadow = '3px 3px 0 #111111';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#CC0000';
+                  e.currentTarget.style.transform = 'none';
+                  e.currentTarget.style.boxShadow = '2px 2px 0 #111111';
+                }}
                 title="Exit Portal"
               >
-                <LogOut size={13} />
-                <span>Exit</span>
+                <LogOut size={14} />
+                <span>EXIT</span>
               </button>
             </div>
           ) : (
             <button
               onClick={() => navigate('/login')}
-              className="px-3.5 py-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-white/70 hover:text-white text-xs font-medium border border-white/[0.08] transition flex items-center gap-1.5"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '7px 14px',
+                background: '#FFFFFF',
+                color: '#111111',
+                border: '2px solid #111111',
+                borderRadius: '0.375rem',
+                fontSize: '0.8125rem',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                boxShadow: '2px 2px 0 #111111',
+                transition: 'all 0.15s ease-out',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#FFD700';
+                e.currentTarget.style.transform = 'translate(-1px, -1px)';
+                e.currentTarget.style.boxShadow = '3px 3px 0 #111111';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#FFFFFF';
+                e.currentTarget.style.transform = 'none';
+                e.currentTarget.style.boxShadow = '2px 2px 0 #111111';
+              }}
             >
-              <User size={13} />
-              <span>Teacher / Admin Login</span>
+              <User size={15} />
+              <span>STAFF SIGN IN</span>
             </button>
           )}
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col justify-center">
+      {/* ===== MAIN CONTENT AREA ===== */}
+      <main style={{ flex: 1, width: '100%', maxWidth: '1280px', margin: '0 auto', padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
+
         {/* Global Notifications */}
         {successMsg && (
-          <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-sm flex items-center gap-2.5 animate-fadeIn">
-            <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
+          <div
+            style={{
+              background: '#4B5320',
+              color: '#FFFFFF',
+              border: '2px solid #111',
+              borderRadius: '0.5rem',
+              padding: '0.75rem 1.25rem',
+              marginBottom: '1.5rem',
+              boxShadow: '4px 4px 0 #111',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              fontWeight: 600,
+              fontSize: '0.875rem',
+            }}
+          >
+            <CheckCircle2 size={18} color="#FFD700" />
             <span>{successMsg}</span>
           </div>
         )}
@@ -398,25 +530,65 @@ export default function StudentPortal() {
         {/* STEP 1: REGISTRATION NUMBER LOOKUP                            */}
         {/* ───────────────────────────────────────────────────────────── */}
         {step === 'LOOKUP' && (
-          <div className="max-w-md w-full mx-auto my-auto py-10">
+          <div className="max-w-md w-full mx-auto my-auto py-10 animate-brutal-enter">
+            {/* Hero brand title */}
             <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-maroon-700 to-maroon-950 border border-maroon-600/30 mb-4 shadow-xl shadow-maroon-950/50">
-                <Sparkles size={28} className="text-amber-400" />
+              <div
+                className="inline-flex items-center justify-center w-16 h-16 mb-4"
+                style={{
+                  background: '#CC0000',
+                  border: '3px solid #111',
+                  borderRadius: '0.5rem',
+                  boxShadow: '4px 4px 0 #111',
+                }}
+              >
+                <GraduationCap size={32} color="#FFFFFF" strokeWidth={2.5} />
               </div>
-              <h2 className="text-3xl font-bold bg-gradient-to-r from-white via-white/95 to-white/70 bg-clip-text text-transparent">
-                Check Your Attendance
-              </h2>
-              <p className="mt-2 text-white/50 text-sm">
-                Enter your university Registration Number to view your section, attended classes, and real-time attendance percentage.
+              <h1
+                style={{
+                  fontSize: 'clamp(1.75rem, 4vw, 2.25rem)',
+                  fontWeight: 700,
+                  letterSpacing: '-0.02em',
+                  color: '#111111',
+                  lineHeight: 1.1,
+                  textTransform: 'uppercase',
+                }}
+              >
+                CHECK YOUR ATTENDANCE
+              </h1>
+              <p style={{ color: '#36454F', fontSize: '0.875rem', marginTop: '0.5rem', fontWeight: 500 }}>
+                Enter your university Registration Number to view attendance records and class history.
               </p>
             </div>
 
-            <div className="glass-lg p-7 rounded-2xl border border-white/[0.08] shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-maroon-600/10 rounded-full blur-2xl pointer-events-none" />
-
+            {/* Brutalist lookup card */}
+            <div
+              style={{
+                background: '#FFFFFF',
+                border: '3px solid #111111',
+                borderRadius: '0.5rem',
+                boxShadow: '6px 6px 0 #111111',
+                padding: '2rem',
+              }}
+            >
               {error && (
-                <div className="mb-5 bg-rose-950/40 border border-rose-500/30 text-rose-300 text-sm rounded-xl px-4 py-3 flex items-start gap-2.5">
-                  <XCircle size={16} className="text-rose-400 shrink-0 mt-0.5" />
+                <div
+                  style={{
+                    background: '#CC0000',
+                    color: '#FFFFFF',
+                    border: '2px solid #111',
+                    borderRadius: '0.375rem',
+                    padding: '0.75rem 1rem',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    marginBottom: '1.25rem',
+                    boxShadow: '3px 3px 0 #111',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                  }}
+                >
+                  <XCircle size={16} />
                   <span>{error}</span>
                 </div>
               )}
@@ -426,13 +598,23 @@ export default function StudentPortal() {
                   e.preventDefault();
                   handleLookup();
                 }}
-                className="space-y-5"
+                style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}
               >
                 <div>
-                  <label className="block text-xs uppercase tracking-wider font-semibold text-white/60 mb-2">
-                    Registration Number
+                  <label
+                    style={{
+                      display: 'block',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                      color: '#111111',
+                      marginBottom: '0.5rem',
+                    }}
+                  >
+                    REGISTRATION NUMBER
                   </label>
-                  <div className="relative">
+                  <div style={{ position: 'relative' }}>
                     <input
                       type="text"
                       required
@@ -440,14 +622,21 @@ export default function StudentPortal() {
                       value={regInput}
                       onChange={(e) => setRegInput(e.target.value)}
                       placeholder="e.g. 2023011, 2023034"
-                      className="glass-input text-base tracking-wide font-mono pl-4 pr-10 py-3 w-full"
+                      className="glass-input"
+                      style={{
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontSize: '1rem',
+                        fontWeight: 700,
+                        paddingRight: '2.5rem',
+                      }}
                     />
                     <GraduationCap
-                      size={18}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none"
+                      size={20}
+                      color="#36454F"
+                      style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
                     />
                   </div>
-                  <p className="text-[11px] text-white/40 mt-1.5">
+                  <p style={{ fontSize: '0.75rem', color: '#36454F', marginTop: '0.375rem' }}>
                     Your official university enrollment ID
                   </p>
                 </div>
@@ -455,16 +644,25 @@ export default function StudentPortal() {
                 <button
                   type="submit"
                   disabled={loading || !regInput.trim()}
-                  className="w-full btn-gradient text-sm py-3 font-semibold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-maroon-900/30 disabled:opacity-50 transition active:scale-[0.99]"
+                  className="btn-gradient"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    width: '100%',
+                    padding: '12px',
+                    fontSize: '0.9375rem',
+                  }}
                 >
                   {loading ? (
-                    <span className="flex items-center gap-2">
+                    <>
                       <RefreshCw size={16} className="animate-spin" />
-                      Verifying ID...
-                    </span>
+                      <span>VERIFYING ID...</span>
+                    </>
                   ) : (
                     <>
-                      <span>Continue to Attendance</span>
+                      <span>CONTINUE TO ATTENDANCE</span>
                       <ArrowRight size={16} />
                     </>
                   )}
@@ -472,11 +670,11 @@ export default function StudentPortal() {
               </form>
 
               {/* Demo Quick-Click Chips */}
-              <div className="mt-6 pt-5 border-t border-white/[0.06]">
-                <p className="text-[11px] text-white/40 uppercase font-semibold tracking-wider mb-2.5">
-                  Quick Demo Students:
+              <div style={{ marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '2px solid #111111' }}>
+                <p style={{ fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#36454F', marginBottom: '0.625rem' }}>
+                  QUICK DEMO STUDENTS:
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                   {DEMO_STUDENTS.map((demo) => (
                     <button
                       key={demo.reg}
@@ -485,18 +683,41 @@ export default function StudentPortal() {
                         setRegInput(demo.reg);
                         handleLookup(demo.reg);
                       }}
-                      className="px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-maroon-700/20 text-white/70 hover:text-amber-300 text-xs font-mono border border-white/[0.06] hover:border-maroon-600/30 transition flex items-center gap-1.5"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.375rem',
+                        padding: '6px 10px',
+                        background: '#FFFFFF',
+                        color: '#111111',
+                        border: '2px solid #111111',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.75rem',
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        boxShadow: '2px 2px 0 #111111',
+                        transition: 'all 0.15s ease-out',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#FFD700';
+                        e.currentTarget.style.transform = 'translate(-1px, -1px)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = '#FFFFFF';
+                        e.currentTarget.style.transform = 'none';
+                      }}
                     >
-                      <span className="font-semibold">{demo.reg}</span>
-                      <span className="text-white/40 text-[10px]">({demo.name.split(' ')[0]})</span>
+                      <span>{demo.reg}</span>
+                      <span style={{ color: '#36454F', fontSize: '0.6875rem', fontWeight: 500 }}>({demo.name.split(' ')[0]})</span>
                     </button>
                   ))}
                 </div>
               </div>
             </div>
 
-            <p className="text-center text-white/30 text-xs mt-6 flex items-center justify-center gap-1.5">
-              <ShieldCheck size={14} className="text-emerald-400/80" />
+            <p style={{ textAlign: 'center', color: '#36454F', fontSize: '0.75rem', marginTop: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem', fontWeight: 600 }}>
+              <ShieldCheck size={16} color="#4B5320" />
               Secured with University Attendance & Face Recognition
             </p>
           </div>
@@ -506,71 +727,131 @@ export default function StudentPortal() {
         {/* STEP 2A: FIRST-TIME SETUP PASSWORD                            */}
         {/* ───────────────────────────────────────────────────────────── */}
         {step === 'SETUP_PASSWORD' && studentInfo && (
-          <div className="max-w-md w-full mx-auto my-auto py-10">
+          <div className="max-w-md w-full mx-auto my-auto py-10 animate-brutal-enter">
             <div className="text-center mb-6">
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-800 border border-amber-500/30 mb-3 shadow-lg shadow-amber-950/40">
-                <Lock size={24} className="text-white" />
+              <div
+                className="inline-flex items-center justify-center w-14 h-14 mb-3"
+                style={{
+                  background: '#FFD700',
+                  border: '3px solid #111',
+                  borderRadius: '0.5rem',
+                  boxShadow: '4px 4px 0 #111',
+                }}
+              >
+                <Lock size={26} color="#111111" strokeWidth={2.5} />
               </div>
-              <h2 className="text-2xl font-bold text-white">Create Portal Password</h2>
-              <p className="mt-1 text-white/50 text-xs">
-                Welcome, <span className="text-amber-300 font-semibold">{studentInfo.fullName}</span>!
+              <h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#111111', textTransform: 'uppercase' }}>
+                CREATE PORTAL PASSWORD
+              </h2>
+              <p style={{ color: '#36454F', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                Welcome, <strong style={{ color: '#111' }}>{studentInfo.fullName}</strong>!
               </p>
             </div>
 
-            <div className="glass-lg p-7 rounded-2xl border border-white/[0.08] shadow-2xl">
-              {/* Student Identification Pill */}
-              <div className="mb-5 p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-between text-xs">
+            <div
+              style={{
+                background: '#FFFFFF',
+                border: '3px solid #111111',
+                borderRadius: '0.5rem',
+                boxShadow: '6px 6px 0 #111111',
+                padding: '2rem',
+              }}
+            >
+              {/* Student identification pill */}
+              <div
+                style={{
+                  background: '#F0F0F0',
+                  border: '2px solid #111111',
+                  borderRadius: '0.375rem',
+                  padding: '0.75rem 1rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '1.25rem',
+                  boxShadow: '2px 2px 0 #111',
+                }}
+              >
                 <div>
-                  <span className="text-white/40 block text-[10px] uppercase">Registered Student</span>
-                  <span className="font-semibold text-white/90">{studentInfo.fullName}</span>
+                  <span style={{ fontSize: '0.625rem', textTransform: 'uppercase', color: '#36454F', fontWeight: 700, display: 'block' }}>
+                    REGISTERED STUDENT
+                  </span>
+                  <span style={{ fontWeight: 700, color: '#111', fontSize: '0.875rem' }}>{studentInfo.fullName}</span>
                 </div>
-                <div className="text-right">
-                  <span className="text-white/40 block text-[10px] uppercase">Roll / Reg #</span>
-                  <span className="font-mono font-bold text-amber-300">{studentInfo.registrationNumber}</span>
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{ fontSize: '0.625rem', textTransform: 'uppercase', color: '#36454F', fontWeight: 700, display: 'block' }}>
+                    ROLL / REG #
+                  </span>
+                  <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: '#111', fontSize: '0.875rem' }}>
+                    {studentInfo.registrationNumber}
+                  </span>
                 </div>
               </div>
 
-              <div className="mb-5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300/90 text-xs flex items-start gap-2">
-                <KeyRound size={16} className="shrink-0 mt-0.5" />
-                <span>
-                  This is your first time checking attendance. Set a secure password to protect your academic records.
-                </span>
+              <div
+                style={{
+                  background: '#FFF8E1',
+                  border: '2px solid #CC5500',
+                  borderRadius: '0.375rem',
+                  padding: '0.75rem 1rem',
+                  marginBottom: '1.25rem',
+                  fontSize: '0.75rem',
+                  color: '#BF360C',
+                  fontWeight: 600,
+                  display: 'flex',
+                  gap: '0.5rem',
+                  alignItems: 'flex-start',
+                }}
+              >
+                <KeyRound size={16} style={{ flexShrink: 0, marginTop: 1 }} />
+                <span>This is your first time checking attendance. Set a secure password to protect your records.</span>
               </div>
 
               {error && (
-                <div className="mb-4 bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs rounded-xl px-4 py-3 flex items-start gap-2">
-                  <XCircle size={15} className="text-rose-400 shrink-0 mt-0.5" />
-                  <span>{error}</span>
+                <div
+                  style={{
+                    background: '#CC0000',
+                    color: '#FFFFFF',
+                    border: '2px solid #111',
+                    borderRadius: '0.375rem',
+                    padding: '0.75rem 1rem',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    marginBottom: '1.25rem',
+                    boxShadow: '3px 3px 0 #111',
+                  }}
+                >
+                  {error}
                 </div>
               )}
 
-              <form onSubmit={handleSetupPassword} className="space-y-4">
+              <form onSubmit={handleSetupPassword} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div>
-                  <label className="block text-xs uppercase tracking-wider font-semibold text-white/60 mb-1.5">
-                    New Password
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#111', marginBottom: '0.375rem' }}>
+                    NEW PASSWORD
                   </label>
-                  <div className="relative">
+                  <div style={{ position: 'relative' }}>
                     <input
                       type={showPassword ? 'text' : 'password'}
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="At least 4 characters"
-                      className="glass-input pr-10 w-full"
+                      className="glass-input"
+                      style={{ paddingRight: '2.5rem' }}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60"
+                      style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#36454F' }}
                     >
-                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs uppercase tracking-wider font-semibold text-white/60 mb-1.5">
-                    Confirm Password
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#111', marginBottom: '0.375rem' }}>
+                    CONFIRM PASSWORD
                   </label>
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -578,23 +859,32 @@ export default function StudentPortal() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Re-enter password"
-                    className="glass-input w-full"
+                    className="glass-input"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading || !password}
-                  className="w-full btn-gradient text-sm py-3 font-semibold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-maroon-900/30 disabled:opacity-50 transition"
+                  className="btn-gradient"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    marginTop: '0.5rem',
+                  }}
                 >
                   {loading ? (
-                    <span className="flex items-center gap-2">
+                    <>
                       <RefreshCw size={16} className="animate-spin" />
-                      Saving Password...
-                    </span>
+                      <span>SAVING PASSWORD...</span>
+                    </>
                   ) : (
                     <>
-                      <span>Set Password & Open Portal</span>
+                      <span>SET PASSWORD & OPEN PORTAL</span>
                       <ArrowRight size={16} />
                     </>
                   )}
@@ -603,9 +893,18 @@ export default function StudentPortal() {
                 <button
                   type="button"
                   onClick={() => setStep('LOOKUP')}
-                  className="w-full text-center text-xs text-white/40 hover:text-white/70 py-2 transition"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#36454F',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    marginTop: '0.25rem',
+                  }}
                 >
-                  ← Switch Student ID
+                  ← SWITCH STUDENT ID
                 </button>
               </form>
             </div>
@@ -616,42 +915,89 @@ export default function StudentPortal() {
         {/* STEP 2B: ENTER PASSWORD                                       */}
         {/* ───────────────────────────────────────────────────────────── */}
         {step === 'ENTER_PASSWORD' && studentInfo && (
-          <div className="max-w-md w-full mx-auto my-auto py-10">
+          <div className="max-w-md w-full mx-auto my-auto py-10 animate-brutal-enter">
             <div className="text-center mb-6">
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-maroon-700 to-maroon-900 border border-maroon-600/30 mb-3 shadow-lg shadow-maroon-950/40">
-                <Lock size={24} className="text-amber-400" />
+              <div
+                className="inline-flex items-center justify-center w-14 h-14 mb-3"
+                style={{
+                  background: '#000080',
+                  border: '3px solid #111',
+                  borderRadius: '0.5rem',
+                  boxShadow: '4px 4px 0 #111',
+                }}
+              >
+                <Lock size={26} color="#FFD700" strokeWidth={2.5} />
               </div>
-              <h2 className="text-2xl font-bold text-white">Enter Your Password</h2>
-              <p className="mt-1 text-white/50 text-xs">
-                Welcome back, <span className="text-white/90 font-semibold">{studentInfo.fullName}</span>!
+              <h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#111111', textTransform: 'uppercase' }}>
+                ENTER YOUR PASSWORD
+              </h2>
+              <p style={{ color: '#36454F', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                Welcome back, <strong style={{ color: '#111' }}>{studentInfo.fullName}</strong>!
               </p>
             </div>
 
-            <div className="glass-lg p-7 rounded-2xl border border-white/[0.08] shadow-2xl">
+            <div
+              style={{
+                background: '#FFFFFF',
+                border: '3px solid #111111',
+                borderRadius: '0.5rem',
+                boxShadow: '6px 6px 0 #111111',
+                padding: '2rem',
+              }}
+            >
               {/* Student info box */}
-              <div className="mb-5 p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-between text-xs">
+              <div
+                style={{
+                  background: '#F0F0F0',
+                  border: '2px solid #111111',
+                  borderRadius: '0.375rem',
+                  padding: '0.75rem 1rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '1.25rem',
+                  boxShadow: '2px 2px 0 #111',
+                }}
+              >
                 <div>
-                  <span className="text-white/40 block text-[10px] uppercase">{studentInfo.department}</span>
-                  <span className="font-semibold text-white/90">{studentInfo.fullName}</span>
+                  <span style={{ fontSize: '0.625rem', textTransform: 'uppercase', color: '#36454F', fontWeight: 700, display: 'block' }}>
+                    {studentInfo.department}
+                  </span>
+                  <span style={{ fontWeight: 700, color: '#111', fontSize: '0.875rem' }}>{studentInfo.fullName}</span>
                 </div>
-                <div className="text-right">
-                  <span className="text-white/40 block text-[10px] uppercase">{studentInfo.batch}</span>
-                  <span className="font-mono font-bold text-amber-300">{studentInfo.registrationNumber}</span>
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{ fontSize: '0.625rem', textTransform: 'uppercase', color: '#36454F', fontWeight: 700, display: 'block' }}>
+                    {studentInfo.batch}
+                  </span>
+                  <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: '#111', fontSize: '0.875rem' }}>
+                    {studentInfo.registrationNumber}
+                  </span>
                 </div>
               </div>
 
               {error && (
-                <div className="mb-4 bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs rounded-xl px-4 py-3 flex items-start gap-2">
-                  <XCircle size={15} className="text-rose-400 shrink-0 mt-0.5" />
-                  <span>{error}</span>
+                <div
+                  style={{
+                    background: '#CC0000',
+                    color: '#FFFFFF',
+                    border: '2px solid #111',
+                    borderRadius: '0.375rem',
+                    padding: '0.75rem 1rem',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    marginBottom: '1.25rem',
+                    boxShadow: '3px 3px 0 #111',
+                  }}
+                >
+                  {error}
                 </div>
               )}
 
-              <form onSubmit={handleLogin} className="space-y-4">
+              <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs uppercase tracking-wider font-semibold text-white/60">
-                      Portal Password
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#111' }}>
+                      PORTAL PASSWORD
                     </label>
                     <button
                       type="button"
@@ -659,12 +1005,20 @@ export default function StudentPortal() {
                         setPassword('');
                         setStep('SETUP_PASSWORD');
                       }}
-                      className="text-[11px] text-amber-400 hover:text-amber-300 hover:underline"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#CC0000',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        textDecoration: 'underline',
+                        cursor: 'pointer',
+                      }}
                     >
                       Reset / Set new?
                     </button>
                   </div>
-                  <div className="relative">
+                  <div style={{ position: 'relative' }}>
                     <input
                       type={showPassword ? 'text' : 'password'}
                       required
@@ -672,14 +1026,15 @@ export default function StudentPortal() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Enter password"
-                      className="glass-input pr-10 w-full"
+                      className="glass-input"
+                      style={{ paddingRight: '2.5rem' }}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60"
+                      style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#36454F' }}
                     >
-                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                 </div>
@@ -687,16 +1042,25 @@ export default function StudentPortal() {
                 <button
                   type="submit"
                   disabled={loading || !password}
-                  className="w-full btn-gradient text-sm py-3 font-semibold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-maroon-900/30 disabled:opacity-50 transition"
+                  className="btn-gradient"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    marginTop: '0.5rem',
+                  }}
                 >
                   {loading ? (
-                    <span className="flex items-center gap-2">
+                    <>
                       <RefreshCw size={16} className="animate-spin" />
-                      Unlocking Records...
-                    </span>
+                      <span>UNLOCKING RECORDS...</span>
+                    </>
                   ) : (
                     <>
-                      <span>View Attendance Records</span>
+                      <span>VIEW ATTENDANCE RECORDS</span>
                       <ArrowRight size={16} />
                     </>
                   )}
@@ -705,9 +1069,18 @@ export default function StudentPortal() {
                 <button
                   type="button"
                   onClick={() => setStep('LOOKUP')}
-                  className="w-full text-center text-xs text-white/40 hover:text-white/70 py-2 transition"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#36454F',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    marginTop: '0.25rem',
+                  }}
                 >
-                  ← Switch Student ID
+                  ← SWITCH STUDENT ID
                 </button>
               </form>
             </div>
@@ -718,47 +1091,104 @@ export default function StudentPortal() {
         {/* STEP 3: FULL STUDENT ATTENDANCE DASHBOARD                     */}
         {/* ───────────────────────────────────────────────────────────── */}
         {step === 'DASHBOARD' && attendanceData && (
-          <div className="space-y-6 animate-fadeIn py-2">
-            {/* 1. Student Profile & Section Card */}
-            <div className="glass-lg p-5 sm:p-6 rounded-2xl border border-white/[0.08] relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-80 h-80 bg-maroon-600/10 rounded-full blur-3xl pointer-events-none" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-                <div className="flex items-start gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-maroon-800 to-maroon-600 border border-maroon-500/40 flex items-center justify-center shadow-xl shadow-maroon-950/60 shrink-0">
-                    <GraduationCap className="text-amber-400" size={32} />
+            {/* 1. Student Profile & Overall Status Card — BRUTAL */}
+            <div
+              style={{
+                background: '#FFFFFF',
+                border: '3px solid #111111',
+                borderRadius: '0.5rem',
+                boxShadow: '6px 6px 0 #111111',
+                padding: '1.5rem',
+              }}
+            >
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+                  <div
+                    style={{
+                      width: 56,
+                      height: 56,
+                      background: '#000080',
+                      border: '3px solid #111',
+                      borderRadius: '0.5rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '3px 3px 0 #111',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <GraduationCap size={32} color="#FFD700" />
                   </div>
                   <div>
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      <h2 className="text-2xl font-bold text-white tracking-tight">
+                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}>
+                      <h2
+                        style={{
+                          fontSize: 'clamp(1.5rem, 3vw, 2rem)',
+                          fontWeight: 700,
+                          color: '#111111',
+                          letterSpacing: '-0.02em',
+                          lineHeight: 1.1,
+                          textTransform: 'uppercase',
+                        }}
+                      >
                         {attendanceData.student.fullName}
                       </h2>
 
                       {/* Primary Section Badge */}
-                      <span className="px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-amber-600/20 text-amber-300 border border-amber-500/30 text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5">
-                        <Layers size={13} className="text-amber-400" />
-                        Section {attendanceData.student.primarySection}
+                      <span
+                        style={{
+                          background: '#FFD700',
+                          color: '#111111',
+                          border: '2px solid #111111',
+                          borderRadius: '0.375rem',
+                          padding: '3px 10px',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.04em',
+                          boxShadow: '2px 2px 0 #111111',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.375rem',
+                        }}
+                      >
+                        <Layers size={13} />
+                        SECTION {attendanceData.student.primarySection}
                       </span>
 
-                      <span className="px-2.5 py-0.5 rounded-full bg-white/[0.06] text-white/60 text-xs font-mono font-medium border border-white/[0.08]">
+                      <span
+                        style={{
+                          background: '#FFFFFF',
+                          color: '#111111',
+                          border: '2px solid #111111',
+                          borderRadius: '0.375rem',
+                          padding: '3px 10px',
+                          fontSize: '0.75rem',
+                          fontFamily: "'JetBrains Mono', monospace",
+                          fontWeight: 700,
+                          boxShadow: '2px 2px 0 #111111',
+                        }}
+                      >
                         {attendanceData.student.registrationNumber}
                       </span>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-4 text-xs text-white/50 mt-2.5">
-                      <span className="flex items-center gap-1.5">
-                        <Building2 size={13} className="text-white/40" />
+                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1rem', marginTop: '0.5rem', fontSize: '0.8125rem', color: '#36454F', fontWeight: 600 }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                        <Building2 size={15} color="#111" />
                         {attendanceData.student.department}
                       </span>
-                      <span className="w-1 h-1 rounded-full bg-white/20" />
-                      <span className="flex items-center gap-1.5">
-                        <CalendarDays size={13} className="text-white/40" />
-                        {attendanceData.student.batch}
+                      <span>•</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                        <CalendarDays size={15} color="#111" />
+                        BATCH {attendanceData.student.batch}
                       </span>
                       {attendanceData.student.email && (
                         <>
-                          <span className="w-1 h-1 rounded-full bg-white/20" />
-                          <span className="text-white/40">{attendanceData.student.email}</span>
+                          <span>•</span>
+                          <span>{attendanceData.student.email}</span>
                         </>
                       )}
                     </div>
@@ -766,42 +1196,64 @@ export default function StudentPortal() {
                 </div>
 
                 {/* Overall Attendance Summary Pill */}
-                <div className="flex items-center gap-4 p-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.06] self-start md:self-auto">
-                  <div className="text-right">
-                    <span className="text-[10px] uppercase tracking-wider text-white/40 block font-semibold">
-                      Overall Attendance
+                <div
+                  style={{
+                    background: '#FFFFFF',
+                    border: '3px solid #111111',
+                    borderRadius: '0.5rem',
+                    boxShadow: '4px 4px 0 #111111',
+                    padding: '1rem 1.25rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1.25rem',
+                    alignSelf: 'flex-start',
+                  }}
+                >
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#36454F', fontWeight: 700, display: 'block' }}>
+                      OVERALL ATTENDANCE
                     </span>
                     <span
-                      className={clsx('text-3xl font-black tabular-nums tracking-tight', {
-                        'text-emerald-400': attendanceData.stats.overallPercentage >= 75,
-                        'text-amber-400':
-                          attendanceData.stats.overallPercentage >= 65 &&
-                          attendanceData.stats.overallPercentage < 75,
-                        'text-rose-400': attendanceData.stats.overallPercentage < 65,
-                      })}
+                      style={{
+                        fontSize: '2.5rem',
+                        fontWeight: 900,
+                        lineHeight: 1,
+                        fontFamily: "'JetBrains Mono', monospace",
+                        color:
+                          attendanceData.stats.overallPercentage >= 75
+                            ? '#4B5320'
+                            : attendanceData.stats.overallPercentage >= 65
+                            ? '#CC5500'
+                            : '#CC0000',
+                      }}
                     >
                       {attendanceData.stats.overallPercentage}%
                     </span>
                   </div>
 
                   <div
-                    className={clsx(
-                      'w-12 h-12 rounded-xl flex items-center justify-center font-bold text-sm border',
-                      {
-                        'bg-emerald-500/10 text-emerald-400 border-emerald-500/30':
-                          attendanceData.stats.overallPercentage >= 75,
-                        'bg-amber-500/10 text-amber-400 border-amber-500/30':
-                          attendanceData.stats.overallPercentage >= 65 &&
-                          attendanceData.stats.overallPercentage < 75,
-                        'bg-rose-500/10 text-rose-400 border-rose-500/30':
-                          attendanceData.stats.overallPercentage < 65,
-                      }
-                    )}
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: '0.375rem',
+                      border: '2px solid #111',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '2px 2px 0 #111',
+                      background:
+                        attendanceData.stats.overallPercentage >= 75
+                          ? '#4B5320'
+                          : attendanceData.stats.overallPercentage >= 65
+                          ? '#FFD700'
+                          : '#CC0000',
+                      color: attendanceData.stats.overallPercentage >= 65 && attendanceData.stats.overallPercentage < 75 ? '#111' : '#FFF',
+                    }}
                   >
                     {attendanceData.stats.overallPercentage >= 75 ? (
-                      <Check size={22} />
+                      <Check size={24} strokeWidth={3} />
                     ) : (
-                      <AlertTriangle size={20} />
+                      <AlertTriangle size={22} strokeWidth={2.5} />
                     )}
                   </div>
                 </div>
@@ -809,61 +1261,113 @@ export default function StudentPortal() {
 
               {/* Status Alert Banner */}
               <div
-                className={clsx('mt-4 px-4 py-2.5 rounded-xl border text-xs flex items-center justify-between gap-3', {
-                  'bg-emerald-500/10 border-emerald-500/20 text-emerald-300':
-                    attendanceData.stats.overallPercentage >= 75,
-                  'bg-amber-500/10 border-amber-500/20 text-amber-300':
-                    attendanceData.stats.overallPercentage >= 65 &&
-                    attendanceData.stats.overallPercentage < 75,
-                  'bg-rose-500/10 border-rose-500/20 text-rose-300':
-                    attendanceData.stats.overallPercentage < 65,
-                })}
+                style={{
+                  marginTop: '1.25rem',
+                  padding: '0.75rem 1rem',
+                  borderRadius: '0.375rem',
+                  border: '2px solid #111111',
+                  boxShadow: '3px 3px 0 #111111',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '1rem',
+                  fontSize: '0.8125rem',
+                  fontWeight: 600,
+                  background:
+                    attendanceData.stats.overallPercentage >= 75
+                      ? '#E8F5E9'
+                      : attendanceData.stats.overallPercentage >= 65
+                      ? '#FFF8E1'
+                      : '#FFEBEE',
+                  color:
+                    attendanceData.stats.overallPercentage >= 75
+                      ? '#1B5E20'
+                      : attendanceData.stats.overallPercentage >= 65
+                      ? '#BF360C'
+                      : '#B71C1C',
+                }}
               >
-                <div className="flex items-center gap-2">
-                  <Award size={15} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Award size={18} />
                   <span>
-                    <strong className="font-semibold">
+                    <strong>
                       {attendanceData.stats.overallPercentage >= 75
-                        ? 'Eligible for Examinations:'
-                        : 'Attendance Warning:'}
+                        ? 'ELIGIBLE FOR EXAMINATIONS:'
+                        : 'ATTENDANCE WARNING:'}
                     </strong>{' '}
                     {attendanceData.stats.standingMessage}
                   </span>
                 </div>
-                <span className="text-[11px] font-mono opacity-80 font-medium">
-                  Requirement: ≥ 75%
+                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, fontSize: '0.75rem' }}>
+                  REQUIREMENT: ≥ 75%
                 </span>
               </div>
             </div>
 
-            {/* 2. Top Metric Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Card 1: Total Classes */}
-              <div className="glass-md p-5 rounded-2xl border border-white/[0.06] flex items-center justify-between">
+            {/* 2. Top Metric Stat Cards (4 cards) — BRUTAL */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" style={{ gap: '1.25rem' }}>
+              {/* Card 1: Classes Conducted */}
+              <div
+                style={{
+                  background: '#FFFFFF',
+                  border: '3px solid #111111',
+                  borderRadius: '0.5rem',
+                  boxShadow: '5px 5px 0 #111111',
+                  padding: '1.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
                 <div>
-                  <p className="text-white/40 text-xs uppercase tracking-wider font-semibold">
-                    Classes Conducted
+                  <p style={{ color: '#36454F', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    CLASSES CONDUCTED
                   </p>
-                  <p className="text-2xl font-bold text-white/90 mt-1 tabular-nums">
+                  <p style={{ color: '#111111', fontSize: '2.25rem', fontWeight: 700, marginTop: '0.25rem', lineHeight: 1 }}>
                     {attendanceData.stats.totalClasses}
                   </p>
-                  <p className="text-[11px] text-white/30 mt-0.5">Total registered lectures</p>
+                  <p style={{ color: '#36454F', fontSize: '0.75rem', marginTop: '0.25rem', fontWeight: 500 }}>
+                    Total registered lectures
+                  </p>
                 </div>
-                <div className="w-11 h-11 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center">
-                  <Calendar size={20} />
+                <div
+                  style={{
+                    width: 46,
+                    height: 46,
+                    background: '#000080',
+                    border: '2px solid #111',
+                    borderRadius: '0.375rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '2px 2px 0 #111',
+                  }}
+                >
+                  <Calendar size={22} color="#FFFFFF" strokeWidth={2.5} />
                 </div>
               </div>
 
-              {/* Card 2: Classes Present */}
-              <div className="glass-md p-5 rounded-2xl border border-white/[0.06] flex items-center justify-between">
+              {/* Card 2: Classes Attended */}
+              <div
+                style={{
+                  background: '#FFFFFF',
+                  border: '3px solid #111111',
+                  borderRadius: '0.5rem',
+                  boxShadow: '5px 5px 0 #111111',
+                  padding: '1.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
                 <div>
-                  <p className="text-emerald-400/80 text-xs uppercase tracking-wider font-semibold">
-                    Classes Attended
+                  <p style={{ color: '#36454F', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    CLASSES ATTENDED
                   </p>
-                  <p className="text-2xl font-bold text-emerald-400 mt-1 tabular-nums">
+                  <p style={{ color: '#4B5320', fontSize: '2.25rem', fontWeight: 700, marginTop: '0.25rem', lineHeight: 1 }}>
                     {attendanceData.stats.presentCount}
                   </p>
-                  <p className="text-[11px] text-white/30 mt-0.5">
+                  <p style={{ color: '#36454F', fontSize: '0.75rem', marginTop: '0.25rem', fontWeight: 500 }}>
                     {attendanceData.stats.totalClasses > 0
                       ? `${Math.round(
                           (attendanceData.stats.presentCount / attendanceData.stats.totalClasses) *
@@ -872,130 +1376,274 @@ export default function StudentPortal() {
                       : 'No classes yet'}
                   </p>
                 </div>
-                <div className="w-11 h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                  <CheckCircle2 size={20} />
+                <div
+                  style={{
+                    width: 46,
+                    height: 46,
+                    background: '#4B5320',
+                    border: '2px solid #111',
+                    borderRadius: '0.375rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '2px 2px 0 #111',
+                  }}
+                >
+                  <CheckCircle2 size={22} color="#FFFFFF" strokeWidth={2.5} />
                 </div>
               </div>
 
-              {/* Card 3: Classes Absent */}
-              <div className="glass-md p-5 rounded-2xl border border-white/[0.06] flex items-center justify-between">
+              {/* Card 3: Classes Missed */}
+              <div
+                style={{
+                  background: '#FFFFFF',
+                  border: '3px solid #111111',
+                  borderRadius: '0.5rem',
+                  boxShadow: '5px 5px 0 #111111',
+                  padding: '1.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
                 <div>
-                  <p className="text-rose-400/80 text-xs uppercase tracking-wider font-semibold">
-                    Classes Missed
+                  <p style={{ color: '#36454F', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    CLASSES MISSED
                   </p>
-                  <p className="text-2xl font-bold text-rose-400 mt-1 tabular-nums">
+                  <p style={{ color: '#CC0000', fontSize: '2.25rem', fontWeight: 700, marginTop: '0.25rem', lineHeight: 1 }}>
                     {attendanceData.stats.absentCount}
                   </p>
-                  <p className="text-[11px] text-white/30 mt-0.5">Marked absent</p>
+                  <p style={{ color: '#36454F', fontSize: '0.75rem', marginTop: '0.25rem', fontWeight: 500 }}>
+                    Marked absent
+                  </p>
                 </div>
-                <div className="w-11 h-11 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center">
-                  <XCircle size={20} />
+                <div
+                  style={{
+                    width: 46,
+                    height: 46,
+                    background: '#CC0000',
+                    border: '2px solid #111',
+                    borderRadius: '0.375rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '2px 2px 0 #111',
+                  }}
+                >
+                  <XCircle size={22} color="#FFFFFF" strokeWidth={2.5} />
                 </div>
               </div>
 
               {/* Card 4: Late / Excused */}
-              <div className="glass-md p-5 rounded-2xl border border-white/[0.06] flex items-center justify-between">
+              <div
+                style={{
+                  background: '#FFFFFF',
+                  border: '3px solid #111111',
+                  borderRadius: '0.5rem',
+                  boxShadow: '5px 5px 0 #111111',
+                  padding: '1.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
                 <div>
-                  <p className="text-amber-400/80 text-xs uppercase tracking-wider font-semibold">
-                    Late / Excused
+                  <p style={{ color: '#36454F', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    LATE / EXCUSED
                   </p>
-                  <p className="text-2xl font-bold text-amber-400 mt-1 tabular-nums">
+                  <p style={{ color: '#CC5500', fontSize: '2.25rem', fontWeight: 700, marginTop: '0.25rem', lineHeight: 1 }}>
                     {attendanceData.stats.lateCount + attendanceData.stats.excusedCount}
                   </p>
-                  <p className="text-[11px] text-white/30 mt-0.5">
+                  <p style={{ color: '#36454F', fontSize: '0.75rem', marginTop: '0.25rem', fontWeight: 500 }}>
                     {attendanceData.stats.lateCount} late, {attendanceData.stats.excusedCount} excused
                   </p>
                 </div>
-                <div className="w-11 h-11 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
-                  <Clock size={20} />
+                <div
+                  style={{
+                    width: 46,
+                    height: 46,
+                    background: '#CC5500',
+                    border: '2px solid #111',
+                    borderRadius: '0.375rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '2px 2px 0 #111',
+                  }}
+                >
+                  <Clock size={22} color="#FFFFFF" strokeWidth={2.5} />
                 </div>
               </div>
             </div>
 
-            {/* 3. Enrolled Courses & Section Table */}
-            <div className="glass-lg rounded-2xl border border-white/[0.08] overflow-hidden">
-              <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <BookOpen size={18} className="text-amber-400" />
-                  <h3 className="text-sm font-semibold text-white/90">
-                    Enrolled Courses & Section Attendance
+            {/* 3. Enrolled Courses & Section Table — BRUTAL */}
+            <div
+              style={{
+                background: '#FFFFFF',
+                border: '3px solid #111111',
+                borderRadius: '0.5rem',
+                boxShadow: '6px 6px 0 #111111',
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                style={{
+                  padding: '1rem 1.25rem',
+                  borderBottom: '3px solid #111111',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  background: '#FFFFFF',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <BookOpen size={20} color="#CC0000" />
+                  <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#111111', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                    ENROLLED COURSES & SECTION ATTENDANCE
                   </h3>
                 </div>
-                <span className="text-xs text-white/40">
-                  {attendanceData.courses.length} Enrolled Subject
-                  {attendanceData.courses.length !== 1 ? 's' : ''}
+                <span
+                  style={{
+                    background: '#FFD700',
+                    color: '#111',
+                    border: '2px solid #111',
+                    borderRadius: '0.375rem',
+                    padding: '2px 8px',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    boxShadow: '1px 1px 0 #111',
+                  }}
+                >
+                  {attendanceData.courses.length} ENROLLED SUBJECT{attendanceData.courses.length !== 1 ? 'S' : ''}
                 </span>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ minWidth: '100%', borderCollapse: 'collapse', border: 'none' }}>
                   <thead>
-                    <tr className="border-b border-white/[0.06] text-white/40 uppercase tracking-wider">
-                      <th className="px-5 py-3 font-semibold">Course Code</th>
-                      <th className="px-5 py-3 font-semibold">Course Name</th>
-                      <th className="px-4 py-3 font-semibold">Section</th>
-                      <th className="px-4 py-3 font-semibold">Instructor</th>
-                      <th className="px-4 py-3 font-semibold text-center">Attended / Total</th>
-                      <th className="px-5 py-3 font-semibold text-right">Attendance %</th>
-                      <th className="px-4 py-3 font-semibold text-center">Status</th>
+                    <tr style={{ background: '#111111' }}>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        COURSE CODE
+                      </th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        COURSE NAME
+                      </th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        SECTION
+                      </th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        INSTRUCTOR
+                      </th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: 700, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        ATTENDED / TOTAL
+                      </th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontSize: '0.75rem', fontWeight: 700, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        ATTENDANCE %
+                      </th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: 700, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        STATUS
+                      </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/[0.04]">
+                  <tbody>
                     {attendanceData.courses.map((course) => (
-                      <tr key={course.courseOfferingId} className="hover:bg-white/[0.02] transition">
-                        <td className="px-5 py-3.5 font-mono font-bold text-white/90">
+                      <tr
+                        key={course.courseOfferingId}
+                        style={{ borderBottom: '1px solid #D1D1D1', transition: 'background 0.15s ease-out' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = '#FFFDF0'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                      >
+                        <td style={{ padding: '0.875rem 1rem', fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: '#111111' }}>
                           {course.courseCode}
                         </td>
-                        <td className="px-5 py-3.5 font-medium text-white/80">
+                        <td style={{ padding: '0.875rem 1rem', fontWeight: 600, color: '#111111' }}>
                           {course.courseName}
-                          <span className="text-white/40 text-[10px] ml-2">
+                          <span style={{ color: '#36454F', fontSize: '0.75rem', marginLeft: '0.5rem', fontWeight: 400 }}>
                             ({course.creditHours} Cr Hrs)
                           </span>
                         </td>
-                        <td className="px-4 py-3.5">
-                          <span className="px-2.5 py-1 rounded-md bg-white/[0.06] text-amber-300 font-semibold text-[11px] border border-white/[0.08]">
+                        <td style={{ padding: '0.875rem 1rem' }}>
+                          <span
+                            style={{
+                              background: '#FFD700',
+                              color: '#111',
+                              border: '2px solid #111',
+                              borderRadius: '0.375rem',
+                              padding: '2px 8px',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              boxShadow: '1px 1px 0 #111',
+                            }}
+                          >
                             Sec {course.section}
                           </span>
                         </td>
-                        <td className="px-4 py-3.5 text-white/60">{course.instructors}</td>
-                        <td className="px-4 py-3.5 text-center font-mono text-white/70">
-                          <span className="text-emerald-400 font-bold">{course.presentCount}</span> /{' '}
-                          {course.totalClasses}
+                        <td style={{ padding: '0.875rem 1rem', color: '#36454F', fontWeight: 500 }}>
+                          {course.instructors}
                         </td>
-                        <td className="px-5 py-3.5 text-right">
-                          <div className="flex items-center justify-end gap-2.5">
-                            <div className="w-20 h-1.5 rounded-full bg-white/[0.08] overflow-hidden">
+                        <td style={{ padding: '0.875rem 1rem', textAlign: 'center', fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>
+                          <span style={{ color: '#4B5320' }}>{course.presentCount}</span> / {course.totalClasses}
+                        </td>
+                        <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                            <div
+                              style={{
+                                width: 80,
+                                height: 10,
+                                background: '#E0E0E0',
+                                border: '2px solid #111111',
+                                borderRadius: '4px',
+                                overflow: 'hidden',
+                              }}
+                            >
                               <div
-                                className={clsx('h-full rounded-full transition-all', {
-                                  'bg-emerald-400': course.percentage >= 75,
-                                  'bg-amber-400': course.percentage >= 65 && course.percentage < 75,
-                                  'bg-rose-400': course.percentage < 65,
-                                })}
-                                style={{ width: `${Math.min(100, course.percentage)}%` }}
+                                style={{
+                                  height: '100%',
+                                  width: `${Math.min(100, course.percentage)}%`,
+                                  background:
+                                    course.percentage >= 75
+                                      ? '#4B5320'
+                                      : course.percentage >= 65
+                                      ? '#CC5500'
+                                      : '#CC0000',
+                                }}
                               />
                             </div>
                             <span
-                              className={clsx('font-mono font-bold tabular-nums w-12 text-right', {
-                                'text-emerald-400': course.percentage >= 75,
-                                'text-amber-400':
-                                  course.percentage >= 65 && course.percentage < 75,
-                                'text-rose-400': course.percentage < 65,
-                              })}
+                              style={{
+                                fontFamily: "'JetBrains Mono', monospace",
+                                fontWeight: 700,
+                                fontSize: '0.875rem',
+                                color:
+                                  course.percentage >= 75
+                                    ? '#4B5320'
+                                    : course.percentage >= 65
+                                    ? '#CC5500'
+                                    : '#CC0000',
+                              }}
                             >
                               {course.percentage}%
                             </span>
                           </div>
                         </td>
-                        <td className="px-4 py-3.5 text-center">
+                        <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
                           <span
-                            className={clsx(
-                              'px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider',
-                              course.isEligible
-                                ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
-                                : 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
-                            )}
+                            style={{
+                              display: 'inline-block',
+                              padding: '2px 8px',
+                              fontSize: '0.6875rem',
+                              fontWeight: 700,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.04em',
+                              borderRadius: '0.375rem',
+                              border: course.isEligible ? '2px solid #4B5320' : '2px solid #CC0000',
+                              background: course.isEligible ? '#E8F5E9' : '#FFEBEE',
+                              color: course.isEligible ? '#1B5E20' : '#B71C1C',
+                              boxShadow: course.isEligible ? '2px 2px 0 #4B5320' : '2px 2px 0 #CC0000',
+                            }}
                           >
-                            {course.isEligible ? 'Eligible' : 'Debarred'}
+                            {course.isEligible ? 'ELIGIBLE' : 'DEBARRED'}
                           </span>
                         </td>
                       </tr>
@@ -1005,32 +1653,66 @@ export default function StudentPortal() {
               </div>
             </div>
 
-            {/* 4. Complete Class Attendance Log (Chronological) */}
-            <div className="glass-lg rounded-2xl border border-white/[0.08] overflow-hidden">
-              <div className="p-5 border-b border-white/[0.06] flex flex-col md:flex-row md:items-center justify-between gap-4">
+            {/* 4. Complete Class Attendance History Log Table — BRUTAL */}
+            <div
+              style={{
+                background: '#FFFFFF',
+                border: '3px solid #111111',
+                borderRadius: '0.5rem',
+                boxShadow: '6px 6px 0 #111111',
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                style={{
+                  padding: '1.25rem',
+                  borderBottom: '3px solid #111111',
+                  background: '#FFFFFF',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1rem',
+                }}
+                className="md:flex-row md:items-center md:justify-between"
+              >
                 <div>
-                  <h3 className="text-sm font-semibold text-white/90 flex items-center gap-2">
-                    <Calendar size={16} className="text-amber-400" />
-                    Class Attendance History Log
+                  <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#111111', textTransform: 'uppercase', letterSpacing: '0.02em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Calendar size={18} color="#CC0000" />
+                    CLASS ATTENDANCE HISTORY LOG
                   </h3>
-                  <p className="text-[11px] text-white/40 mt-0.5">
+                  <p style={{ fontSize: '0.75rem', color: '#36454F', marginTop: '0.25rem', fontWeight: 500 }}>
                     Chronological record of every lecture session conducted
                   </p>
                 </div>
 
-                {/* Filter and search bar */}
-                <div className="flex flex-wrap items-center gap-2.5">
+                {/* Filter and search controls */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.75rem' }}>
                   {/* Status Pills */}
-                  <div className="flex p-0.5 rounded-xl bg-white/[0.04] border border-white/[0.06] text-xs">
+                  <div
+                    style={{
+                      display: 'flex',
+                      background: '#F0F0F0',
+                      border: '2px solid #111111',
+                      borderRadius: '0.375rem',
+                      padding: '2px',
+                    }}
+                  >
                     {(['ALL', 'PRESENT', 'ABSENT', 'LATE', 'EXCUSED'] as const).map((st) => (
                       <button
                         key={st}
                         onClick={() => setStatusFilter(st)}
-                        className={clsx('px-2.5 py-1 rounded-lg font-medium transition text-[11px]', {
-                          'bg-maroon-700 text-white font-semibold shadow-sm':
-                            statusFilter === st,
-                          'text-white/50 hover:text-white': statusFilter !== st,
-                        })}
+                        style={{
+                          padding: '4px 10px',
+                          fontSize: '0.6875rem',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          borderRadius: '0.25rem',
+                          border: statusFilter === st ? '2px solid #111111' : '2px solid transparent',
+                          background: statusFilter === st ? '#FFD700' : 'transparent',
+                          color: statusFilter === st ? '#111111' : '#36454F',
+                          cursor: 'pointer',
+                          boxShadow: statusFilter === st ? '1px 1px 0 #111111' : 'none',
+                          transition: 'all 0.15s ease-out',
+                        }}
                       >
                         {st}
                       </button>
@@ -1042,9 +1724,19 @@ export default function StudentPortal() {
                     <select
                       value={courseFilter}
                       onChange={(e) => setCourseFilter(e.target.value)}
-                      className="glass-input text-xs py-1.5 px-3 rounded-lg"
+                      style={{
+                        background: '#FFFFFF',
+                        border: '2px solid #111111',
+                        borderRadius: '0.375rem',
+                        padding: '6px 10px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        color: '#111111',
+                        cursor: 'pointer',
+                        outline: 'none',
+                      }}
                     >
-                      <option value="ALL">All Courses</option>
+                      <option value="ALL">ALL COURSES</option>
                       {attendanceData.courses.map((c) => (
                         <option key={c.courseCode} value={c.courseCode}>
                           {c.courseCode} - {c.courseName}
@@ -1054,40 +1746,65 @@ export default function StudentPortal() {
                   )}
 
                   {/* Search Query */}
-                  <div className="relative">
+                  <div style={{ position: 'relative' }}>
                     <Search
-                      size={13}
-                      className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/30"
+                      size={15}
+                      color="#36454F"
+                      style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
                     />
                     <input
                       type="text"
                       placeholder="Search history..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="glass-input pl-8 pr-3 py-1.5 text-xs rounded-lg w-40"
+                      style={{
+                        background: '#FFFFFF',
+                        border: '2px solid #111111',
+                        borderRadius: '0.375rem',
+                        padding: '6px 10px 6px 30px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        color: '#111111',
+                        width: '160px',
+                        outline: 'none',
+                      }}
                     />
                   </div>
                 </div>
               </div>
 
               {/* History Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ minWidth: '100%', borderCollapse: 'collapse', border: 'none' }}>
                   <thead>
-                    <tr className="border-b border-white/[0.06] text-white/40 uppercase tracking-wider">
-                      <th className="px-5 py-3 font-semibold">Date & Time</th>
-                      <th className="px-5 py-3 font-semibold">Course</th>
-                      <th className="px-4 py-3 font-semibold">Section</th>
-                      <th className="px-4 py-3 font-semibold">Classroom</th>
-                      <th className="px-4 py-3 font-semibold">Teacher</th>
-                      <th className="px-5 py-3 font-semibold">Status</th>
-                      <th className="px-5 py-3 font-semibold">Verification Method</th>
+                    <tr style={{ background: '#111111' }}>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        DATE & TIME
+                      </th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        COURSE
+                      </th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        SECTION
+                      </th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        CLASSROOM
+                      </th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        TEACHER
+                      </th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: 700, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        STATUS
+                      </th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: 700, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        VERIFICATION METHOD
+                      </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/[0.04]">
+                  <tbody>
                     {filteredHistory.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="px-5 py-10 text-center text-white/40">
+                        <td colSpan={7} style={{ padding: '3rem 1rem', textAlign: 'center', color: '#36454F', fontWeight: 600 }}>
                           No class attendance records match your filters.
                         </td>
                       </tr>
@@ -1107,67 +1824,122 @@ export default function StudentPortal() {
                             });
 
                         return (
-                          <tr key={item.id} className="hover:bg-white/[0.02] transition">
-                            <td className="px-5 py-3.5">
-                              <span className="font-medium text-white/90 block">
+                          <tr
+                            key={item.id}
+                            style={{ borderBottom: '1px solid #D1D1D1', transition: 'background 0.15s ease-out' }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = '#FFFDF0'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                          >
+                            <td style={{ padding: '0.875rem 1rem' }}>
+                              <span style={{ fontWeight: 700, color: '#111111', display: 'block' }}>
                                 {dateFormatted}
                               </span>
-                              <span className="text-[11px] text-white/40 font-mono">
+                              <span style={{ fontSize: '0.6875rem', color: '#36454F', fontFamily: "'JetBrains Mono', monospace" }}>
                                 {timeFormatted}
                               </span>
                             </td>
-                            <td className="px-5 py-3.5">
-                              <span className="font-mono font-bold text-white/80 block">
+                            <td style={{ padding: '0.875rem 1rem' }}>
+                              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: '#111111', display: 'block' }}>
                                 {item.courseCode}
                               </span>
-                              <span className="text-[11px] text-white/50">{item.courseName}</span>
+                              <span style={{ fontSize: '0.75rem', color: '#36454F' }}>{item.courseName}</span>
                             </td>
-                            <td className="px-4 py-3.5">
-                              <span className="px-2 py-0.5 rounded bg-white/[0.05] text-amber-300 font-semibold text-[10px] border border-white/[0.08]">
+                            <td style={{ padding: '0.875rem 1rem' }}>
+                              <span
+                                style={{
+                                  background: '#FFD700',
+                                  color: '#111',
+                                  border: '2px solid #111',
+                                  borderRadius: '0.375rem',
+                                  padding: '2px 8px',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 700,
+                                  boxShadow: '1px 1px 0 #111',
+                                }}
+                              >
                                 Sec {item.section}
                               </span>
                             </td>
-                            <td className="px-4 py-3.5 text-white/70 font-medium">
+                            <td style={{ padding: '0.875rem 1rem', color: '#111111', fontWeight: 600 }}>
                               {item.classroomName}
                             </td>
-                            <td className="px-4 py-3.5 text-white/60">{item.teacherName}</td>
-                            <td className="px-5 py-3.5">
+                            <td style={{ padding: '0.875rem 1rem', color: '#36454F', fontWeight: 500 }}>
+                              {item.teacherName}
+                            </td>
+                            <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
                               <span
-                                className={clsx(
-                                  'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase',
-                                  {
-                                    'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30':
-                                      item.status === 'PRESENT',
-                                    'bg-rose-500/20 text-rose-400 border border-rose-500/30':
-                                      item.status === 'ABSENT',
-                                    'bg-amber-500/20 text-amber-400 border border-amber-500/30':
-                                      item.status === 'LATE',
-                                    'bg-blue-500/20 text-blue-400 border border-blue-500/30':
-                                      item.status === 'EXCUSED',
-                                  }
-                                )}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.375rem',
+                                  padding: '3px 10px',
+                                  borderRadius: '0.375rem',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 700,
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.04em',
+                                  border: '2px solid #111111',
+                                  boxShadow: '2px 2px 0 #111111',
+                                  ...(item.status === 'PRESENT'
+                                    ? { background: '#E8F5E9', color: '#1B5E20' }
+                                    : item.status === 'ABSENT'
+                                    ? { background: '#FFEBEE', color: '#B71C1C' }
+                                    : item.status === 'LATE'
+                                    ? { background: '#FFF8E1', color: '#BF360C' }
+                                    : { background: '#E8EAF6', color: '#1A237E' }),
+                                }}
                               >
-                                {item.status === 'PRESENT' && <CheckCircle2 size={13} />}
-                                {item.status === 'ABSENT' && <XCircle size={13} />}
-                                {item.status === 'LATE' && <Clock size={13} />}
-                                {item.status === 'EXCUSED' && <ShieldCheck size={13} />}
+                                {item.status === 'PRESENT' && <CheckCircle2 size={14} />}
+                                {item.status === 'ABSENT' && <XCircle size={14} />}
+                                {item.status === 'LATE' && <Clock size={14} />}
+                                {item.status === 'EXCUSED' && <ShieldCheck size={14} />}
                                 {item.status}
                               </span>
                             </td>
-                            <td className="px-5 py-3.5 text-white/50 text-[11px]">
+                            <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
                               {item.markedBy === 'automatic' ? (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20">
-                                  <Sparkles size={11} />
-                                  <span>AI Recognition</span>
+                                <span
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.375rem',
+                                    padding: '3px 8px',
+                                    borderRadius: '0.375rem',
+                                    background: '#F3E5F5',
+                                    color: '#4A148C',
+                                    border: '2px solid #4A148C',
+                                    boxShadow: '1px 1px 0 #4A148C',
+                                    fontSize: '0.6875rem',
+                                    fontWeight: 700,
+                                    textTransform: 'uppercase',
+                                  }}
+                                >
+                                  <Sparkles size={12} />
+                                  <span>AI RECOGNITION</span>
                                   {item.confidence && (
-                                    <span className="font-mono text-[10px]">
+                                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.625rem' }}>
                                       ({item.confidence}%)
                                     </span>
                                   )}
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/[0.05] text-white/70 border border-white/[0.08]">
-                                  <span>Teacher Manual Entry</span>
+                                <span
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.375rem',
+                                    padding: '3px 8px',
+                                    borderRadius: '0.375rem',
+                                    background: '#F0F0F0',
+                                    color: '#36454F',
+                                    border: '2px solid #111111',
+                                    boxShadow: '1px 1px 0 #111111',
+                                    fontSize: '0.6875rem',
+                                    fontWeight: 700,
+                                    textTransform: 'uppercase',
+                                  }}
+                                >
+                                  <span>MANUAL ENTRY</span>
                                 </span>
                               )}
                             </td>
@@ -1183,95 +1955,194 @@ export default function StudentPortal() {
         )}
 
         {/* ───────────────────────────────────────────────────────────── */}
-        {/* CHANGE PASSWORD MODAL                                         */}
+        {/* CHANGE PASSWORD MODAL — BRUTAL                                */}
         {/* ───────────────────────────────────────────────────────────── */}
         {isChangePassOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
-            <div className="glass-lg p-6 rounded-2xl max-w-sm w-full border border-white/[0.1] shadow-2xl relative">
-              <h3 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
-                <KeyRound size={18} className="text-amber-400" />
-                Change Portal Password
-              </h3>
-              <p className="text-xs text-white/40 mb-4">
-                Update the password used to access your student records.
-              </p>
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 300,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '1rem',
+              background: 'rgba(0,0,0,0.6)',
+            }}
+          >
+            <div
+              style={{
+                width: '100%',
+                maxWidth: '420px',
+                background: '#FFFFFF',
+                border: '3px solid #111111',
+                borderRadius: '0.5rem',
+                boxShadow: '8px 8px 0 #111111',
+                overflow: 'hidden',
+              }}
+              className="animate-brutal-enter"
+            >
+              {/* Modal header */}
+              <div
+                style={{
+                  background: '#111111',
+                  color: '#FFFFFF',
+                  padding: '1rem 1.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  borderBottom: '3px solid #111111',
+                }}
+              >
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <KeyRound size={18} color="#FFD700" />
+                  CHANGE PORTAL PASSWORD
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsChangePassOpen(false);
+                    setPassChangeMsg('');
+                  }}
+                  style={{
+                    background: '#CC0000',
+                    color: '#FFFFFF',
+                    border: '2px solid #FFFFFF',
+                    borderRadius: '0.375rem',
+                    padding: '0.25rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <XCircle size={16} />
+                </button>
+              </div>
 
-              {passChangeMsg && (
-                <div className="mb-4 p-3 rounded-xl bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs">
-                  {passChangeMsg}
-                </div>
-              )}
+              <div style={{ padding: '1.5rem' }}>
+                <p style={{ fontSize: '0.8125rem', color: '#36454F', marginBottom: '1rem' }}>
+                  Update the password used to access your student attendance records.
+                </p>
 
-              <form onSubmit={handleChangePassword} className="space-y-3.5">
-                <div>
-                  <label className="block text-[11px] font-semibold text-white/60 uppercase mb-1">
-                    Current Password
-                  </label>
-                  <input
-                    type="password"
-                    value={currentPass}
-                    onChange={(e) => setCurrentPass(e.target.value)}
-                    placeholder="Enter current password"
-                    className="glass-input w-full text-xs"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-semibold text-white/60 uppercase mb-1">
-                    New Password
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    value={newPass}
-                    onChange={(e) => setNewPass(e.target.value)}
-                    placeholder="At least 4 characters"
-                    className="glass-input w-full text-xs"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-semibold text-white/60 uppercase mb-1">
-                    Confirm New Password
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    value={confirmNewPass}
-                    onChange={(e) => setConfirmNewPass(e.target.value)}
-                    placeholder="Re-enter new password"
-                    className="glass-input w-full text-xs"
-                  />
-                </div>
-
-                <div className="flex gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsChangePassOpen(false);
-                      setPassChangeMsg('');
+                {passChangeMsg && (
+                  <div
+                    style={{
+                      background: '#CC0000',
+                      color: '#FFFFFF',
+                      border: '2px solid #111',
+                      borderRadius: '0.375rem',
+                      padding: '0.625rem 0.875rem',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      marginBottom: '1rem',
+                      boxShadow: '2px 2px 0 #111',
                     }}
-                    className="flex-1 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-xs font-semibold text-white/70"
                   >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={passChangeLoading || !newPass}
-                    className="flex-1 btn-gradient py-2 rounded-xl text-xs font-semibold"
-                  >
-                    {passChangeLoading ? 'Saving...' : 'Update Password'}
-                  </button>
-                </div>
-              </form>
+                    {passChangeMsg}
+                  </div>
+                )}
+
+                <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', color: '#111', marginBottom: '0.375rem' }}>
+                      CURRENT PASSWORD
+                    </label>
+                    <input
+                      type="password"
+                      value={currentPass}
+                      onChange={(e) => setCurrentPass(e.target.value)}
+                      placeholder="Enter current password"
+                      className="glass-input"
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', color: '#111', marginBottom: '0.375rem' }}>
+                      NEW PASSWORD
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      value={newPass}
+                      onChange={(e) => setNewPass(e.target.value)}
+                      placeholder="At least 4 characters"
+                      className="glass-input"
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', color: '#111', marginBottom: '0.375rem' }}>
+                      CONFIRM NEW PASSWORD
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      value={confirmNewPass}
+                      onChange={(e) => setConfirmNewPass(e.target.value)}
+                      placeholder="Re-enter new password"
+                      className="glass-input"
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsChangePassOpen(false);
+                        setPassChangeMsg('');
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '10px',
+                        background: '#FFFFFF',
+                        color: '#111111',
+                        border: '2px solid #111111',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        cursor: 'pointer',
+                        boxShadow: '2px 2px 0 #111111',
+                      }}
+                    >
+                      CANCEL
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={passChangeLoading || !newPass}
+                      className="btn-gradient"
+                      style={{
+                        flex: 1,
+                        padding: '10px',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {passChangeLoading ? 'SAVING...' : 'UPDATE PASSWORD'}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-white/[0.04] py-4 text-center text-xs text-white/30 backdrop-blur-sm">
-        Smart Attendance Management System • University Portal
+      {/* ===== FOOTER — BRUTAL ===== */}
+      <footer
+        style={{
+          borderTop: '3px solid #111111',
+          background: '#FFFFFF',
+          padding: '1rem 1.5rem',
+          textAlign: 'center',
+          fontSize: '0.8125rem',
+          fontWeight: 600,
+          color: '#36454F',
+        }}
+      >
+        Smart Attendance Management System • R.V. College of Engineering
       </footer>
     </div>
   );

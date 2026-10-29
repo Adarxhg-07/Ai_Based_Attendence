@@ -2,7 +2,7 @@
 
 Source: `Poster/Ref_1.jpeg` (816×1104 px, aspect 0.739) and `Poster/Ref_2.jpeg` (576×1440 px, aspect 0.400).
 
-Both references use the same content (CIM Automation Lab Trainer, Faculty of EE, GIKI) in two different aspect ratios — a **standard poster** (~A1 portrait) and a **vertical standee** (~roll-up banner). The sections are the same; only the arrangement differs.
+Both references use the same content (CIM Automation Lab Trainer, Department of CSE, RVCE) in two different aspect ratios — a **standard poster** (~A1 portrait) and a **vertical standee** (~roll-up banner). The sections are the same; only the arrangement differs.
 
 ---
 
@@ -10,7 +10,7 @@ Both references use the same content (CIM Automation Lab Trainer, Faculty of EE,
 
 | # | Section | Content |
 |---|---------|---------|
-| 1 | Header strip | GIKI name (red), Faculty subtitle, small GIKI logo in top-right corner. |
+| 1 | Header strip | RVCE name (red), Faculty subtitle, small RVCE logo in top-right corner. |
 | 2 | Title band | Project title in bold uppercase, white text on dark accent background. |
 | 3 | Abstract | Paragraph explaining project motivation & overview. |
 | 4 | Flowchart | Process flow diagram (top-level method). |

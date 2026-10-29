@@ -86,7 +86,7 @@ MEMBERS = [("Adarsh G", "CSE"),
 FLOWCHART_IMG = os.path.join(REPORT_ASSETS, "fig_pipeline.png")
 SYSTEM_IMG = os.path.join(REPORT_ASSETS, "fig_architecture.png")
 RESULTS_IMG = os.path.join(REPORT_ASSETS, "fig_accuracy.png")
-GIKI_LOGO = os.path.join(REPORT_ASSETS, "giki_logo.jpeg")
+RVCE_LOGO = os.path.join(REPORT_ASSETS, "rvce_logo.jpeg")
 
 
 def pill(ax, x, y, w, h, text, fs=14, text_color=CARD, bg=PLUM, upper=True, fw="bold"):
@@ -164,8 +164,8 @@ def stat_grid(ax, x, y, w, h, stats):
 def header_strip(ax, x, y, w, h):
     ax.add_patch(Rectangle((x, y - h), w, h, facecolor=CREAM, linewidth=0))
     # logo (right)
-    if os.path.exists(GIKI_LOGO):
-        img = imread(GIKI_LOGO)
+    if os.path.exists(RVCE_LOGO):
+        img = imread(RVCE_LOGO)
         side = h * 0.85
         lx = x + w - side - 0.05
         ly = y - h + (h - side) / 2

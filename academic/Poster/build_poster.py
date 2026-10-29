@@ -48,9 +48,9 @@ FONT_MONO = "Cascadia Mono Semibold"
 # =============================================================================
 
 PROJECT_TITLE = "Smart Attendance System using Facial Image Recognition"
-INSTITUTE = "GHULAM ISHAQ KHAN INSTITUTE OF ENGINEERING SCIENCES AND TECHNOLOGY"
-FACULTY = "FACULTY OF ELECTRICAL ENGINEERING"
-GIKI_LOGO = os.path.join(REPORT_ASSETS, "giki_logo.jpeg")
+INSTITUTE = "R.V. COLLEGE OF ENGINEERING"
+FACULTY = "DEPARTMENT OF COMPUTER SCIENCE & ENGINEERING"
+RVCE_LOGO = os.path.join(REPORT_ASSETS, "rvce_logo.jpeg")
 
 ABSTRACT = (
     "This project replaces manual classroom attendance with a single classroom "
@@ -280,14 +280,14 @@ def add_image_fitted(slide, path, x, y, w, h):
 # =============================================================================
 
 def build_header_strip(slide, x, y, w, h):
-    """Institute name + faculty subtitle + GIKI logo on the right."""
+    """Institute name + faculty subtitle + RVCE logo on the right."""
     add_rect(slide, x, y, w, h, PALETTE["background"])
     # logo on right
-    if os.path.exists(GIKI_LOGO):
+    if os.path.exists(RVCE_LOGO):
         logo_side = h - Inches(0.1)
         logo_x = x + w - logo_side - Inches(0.15)
         logo_y = y + (h - logo_side) // 2
-        slide.shapes.add_picture(GIKI_LOGO, logo_x, logo_y, logo_side, logo_side)
+        slide.shapes.add_picture(RVCE_LOGO, logo_x, logo_y, logo_side, logo_side)
     # text region left of logo
     text_w = w - Inches(1.6)
     add_text(slide, x + Inches(0.2), y, text_w, h // 2, INSTITUTE,

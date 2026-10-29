@@ -1,134 +1,412 @@
 @import "tailwindcss";
 
+/* ================================================================
+   NEOBRUTALISMO CRÍTICO — Design System
+   Direct. Bold. Opinionated. Raw.
+   ================================================================ */
+
 @theme {
-  --color-navy-950: #060a14;
-  --color-navy-900: #0c1424;
-  --color-navy-800: #142038;
-  --color-navy-700: #1c2d4d;
-  --color-navy-600: #253c66;
-  --color-navy-500: #315291;
-  --color-navy-400: #4a74bf;
-  --color-navy-300: #7da0d9;
-  --color-navy-200: #b0c8ea;
-  --color-navy-100: #dae4f4;
-  --color-navy-50: #eef3fa;
+  /* Primary palette */
+  --color-preto: #111111;
+  --color-branco: #FFFFFF;
+  --color-vermelho: #CC0000;
+  --color-chumbo: #36454F;
+  --color-amarelo: #FFD700;
+  --color-azul: #000080;
+  --color-verde: #4B5320;
+  --color-laranja: #CC5500;
 
-  --color-gold-600: #B8860B;
-  --color-gold-500: #D4A843;
-  --color-gold-400: #E0BE6A;
-  --color-gold-300: #ECD48E;
-  --color-gold-200: #F5E6B8;
-  --color-gold-100: #FBF3DC;
+  /* Surface variants */
+  --color-surface-dark: #111111;
+  --color-surface-light: #FAFAFA;
+  --color-surface-card: #FFFFFF;
+  --color-surface-muted: #F0F0F0;
 
-  --color-maroon-950: #1a0008;
-  --color-maroon-900: #3d0012;
-  --color-maroon-800: #5c001c;
-  --color-maroon-700: #800020;
-  --color-maroon-600: #9b1535;
-  --color-maroon-500: #b82d4a;
-  --color-maroon-400: #d44565;
-  --color-maroon-300: #e87090;
-  --color-maroon-200: #f4a0b5;
-  --color-maroon-100: #fcd8e2;
+  /* Semantic */
+  --color-error: #CC0000;
+  --color-warning: #FFD700;
+  --color-success: #4B5320;
+  --color-info: #000080;
 
-  --color-glass-white: rgba(255, 255, 255, 0.06);
-  --color-glass-white-md: rgba(255, 255, 255, 0.10);
-  --color-glass-white-lg: rgba(255, 255, 255, 0.15);
-  --color-glass-border: rgba(255, 255, 255, 0.10);
-  --color-glass-border-light: rgba(255, 255, 255, 0.18);
+  /* Borders */
+  --color-border-hard: #111111;
+  --color-border-muted: #36454F;
+  --color-border-light: #D1D1D1;
 }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+/* ================================================================
+   BASE
+   ================================================================ */
+
+*, *::before, *::after {
+  font-family: 'Roboto Condensed', 'Arial Narrow', sans-serif;
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #F0F0F0; }
+::-webkit-scrollbar-thumb { background: #36454F; border: 2px solid #F0F0F0; }
+::-webkit-scrollbar-thumb:hover { background: #111111; }
 
 body {
-  background: linear-gradient(135deg, #050508 0%, #0a0a12 30%, #0e0810 50%, #080610 70%, #050508 100%);
-  min-height: 100vh;
-  color: #e2e8f0;
+  background: #FAFAFA;
+  min-height: 100dvh;
+  color: #111111;
+  font-family: 'Roboto Condensed', 'Arial Narrow', sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
 }
 
-.glass {
-  background: rgba(255,255,255,0.06);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 16px;
-}
-.glass-md {
-  background: rgba(255,255,255,0.1);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 16px;
-}
-.glass-lg {
-  background: rgba(255,255,255,0.14);
-  backdrop-filter: blur(30px);
-  -webkit-backdrop-filter: blur(30px);
-  border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 16px;
+/* ================================================================
+   TYPOGRAPHY
+   ================================================================ */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Roboto Condensed', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
 }
 
+code, pre, .mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ================================================================
+   UTILITY CLASSES — Neobrutalist
+   ================================================================ */
+
+/* Glass replacements — solid brutal cards */
+.glass, .glass-md, .glass-lg {
+  background: #FFFFFF;
+  border: 2px solid #111111;
+  border-radius: 0.5rem;
+  box-shadow: 4px 4px 0 #111111;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.glass:hover, .glass-md:hover, .glass-lg:hover {
+  box-shadow: 6px 6px 0 #111111;
+  transform: translate(-1px, -1px);
+  transition: all 0.2s ease-out;
+}
+
+/* Gradient text replacement — bold solid color */
 .gradient-text {
-  background: linear-gradient(135deg, #800020, #9b1535, #D4A843);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  background: none;
+  -webkit-background-clip: unset;
+  -webkit-text-fill-color: #111111;
+  background-clip: unset;
+  color: #111111;
+  font-weight: 700;
 }
 
+/* Primary action button */
 .btn-gradient {
-  background: linear-gradient(135deg, #800020 0%, #9b1535 50%, #5c001c 100%);
-  color: white;
-  font-weight: 600;
-  border: none;
-  border-radius: 12px;
-  padding: 10px 24px;
+  background: #CC0000;
+  color: #FFFFFF;
+  font-family: 'Roboto Condensed', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 2px solid #111111;
+  border-radius: 0.5rem;
+  padding: 12px 24px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(128,0,32,0.3);
+  transition: all 0.2s ease-out;
+  box-shadow: 3px 3px 0 #111111;
 }
 .btn-gradient:hover {
-  box-shadow: 0 6px 25px rgba(128,0,32,0.5);
-  transform: translateY(-1px);
+  box-shadow: 5px 5px 0 #111111;
+  transform: translate(-1px, -1px);
+}
+.btn-gradient:active {
+  box-shadow: 1px 1px 0 #111111;
+  transform: translate(1px, 1px);
 }
 .btn-gradient:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
   transform: none;
-  box-shadow: none;
+  box-shadow: 3px 3px 0 #111111;
 }
 
-.glow-gold { box-shadow: 0 0 20px rgba(212,168,67,0.15), 0 0 60px rgba(212,168,67,0.05); }
-.glow-maroon { box-shadow: 0 0 20px rgba(128,0,32,0.25), 0 0 60px rgba(128,0,32,0.08); }
+/* Glow replacements — border emphasis */
+.glow-gold {
+  box-shadow: 4px 4px 0 #FFD700;
+  border: 2px solid #111111;
+}
+.glow-maroon {
+  box-shadow: 4px 4px 0 #CC0000;
+  border: 2px solid #111111;
+}
 
+/* Input — neobrutalist */
 .glass-input {
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 12px;
-  padding: 10px 16px;
-  color: #e2e8f0;
-  font-size: 14px;
-  transition: all 0.2s;
+  background: #FFFFFF;
+  border: 2px solid #111111;
+  border-radius: 0.5rem;
+  padding: 12px 16px;
+  color: #111111;
+  font-family: 'Roboto Condensed', sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  transition: all 0.15s ease-out;
   outline: none;
   width: 100%;
 }
-.glass-input::placeholder { color: rgba(255,255,255,0.3); }
+.glass-input::placeholder {
+  color: #36454F;
+  opacity: 0.6;
+}
 .glass-input:focus {
-  border-color: #800020;
-  box-shadow: 0 0 0 3px rgba(128,0,32,0.2);
-  background: rgba(255,255,255,0.1);
+  border-color: #CC0000;
+  box-shadow: 3px 3px 0 #CC0000;
+  background: #FFFFFF;
 }
 
+/* ================================================================
+   ANIMATIONS — Subtle, purposeful
+   ================================================================ */
+
 @keyframes pulse-glow {
-  0%, 100% { opacity: 0.4; }
+  0%, 100% { opacity: 0.6; }
   50% { opacity: 1; }
 }
 .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
 
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+  50% { transform: translateY(-4px); }
 }
-.animate-float { animation: float 6s ease-in-out infinite; }
+.animate-float { animation: float 4s ease-in-out infinite; }
+
+@keyframes brutal-entrance {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-brutal-enter {
+  animation: brutal-entrance 0.42s ease-out both;
+}
+
+/* Staggered list items */
+.stagger-item:nth-child(1) { animation-delay: 0ms; }
+.stagger-item:nth-child(2) { animation-delay: 80ms; }
+.stagger-item:nth-child(3) { animation-delay: 160ms; }
+.stagger-item:nth-child(4) { animation-delay: 240ms; }
+.stagger-item:nth-child(5) { animation-delay: 320ms; }
+.stagger-item:nth-child(6) { animation-delay: 400ms; }
+
+/* ================================================================
+   COMPONENT OVERRIDES — Global
+   ================================================================ */
+
+/* Tables */
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 2px solid #111111;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  width: 100%;
+}
+thead {
+  background: #111111;
+  color: #FFFFFF;
+}
+th {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.75rem;
+  padding: 12px 16px;
+  text-align: left;
+}
+td {
+  padding: 12px 16px;
+  border-top: 1px solid #D1D1D1;
+  font-size: 0.875rem;
+}
+tbody tr:hover {
+  background: #FFD700;
+  transition: background 0.15s ease-out;
+}
+
+/* Badge / Pill */
+.badge-brutal {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border: 2px solid #111111;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  box-shadow: 2px 2px 0 #111111;
+}
+
+/* ================================================================
+   TAILWIND OVERRIDES — Force neobrutalist on Tailwind utilities
+   ================================================================ */
+
+/* Override rounded-2xl, rounded-xl to brutalist 0.5rem */
+.rounded-2xl { border-radius: 0.5rem !important; }
+.rounded-xl { border-radius: 0.5rem !important; }
+
+/* Force border visibility on containers using border-white/X */
+[class*="border-white/"] {
+  border-color: #D1D1D1 !important;
+}
+
+/* Override bg gradients to solid */
+[class*="bg-gradient-to-br"],
+[class*="bg-gradient-to-r"] {
+  background-image: none !important;
+}
+
+/* Override blur effects */
+[class*="blur-["] {
+  filter: none !important;
+}
+[class*="backdrop-blur"] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Override white opacity text to solid dark text */
+.text-white\/95, .text-white\/90 { color: #111111 !important; }
+.text-white\/80 { color: #1a1a1a !important; }
+.text-white\/60 { color: #36454F !important; }
+.text-white\/50 { color: #36454F !important; }
+.text-white\/40 { color: #555555 !important; }
+.text-white\/30 { color: #777777 !important; }
+.text-white\/20 { color: #999999 !important; }
+.text-white { color: #111111 !important; }
+
+/* Override dark backgrounds to light surfaces */
+[class*="bg-[#08080e]"],
+[class*="bg-[#050508]"],
+.bg-black\/60 {
+  background: #FAFAFA !important;
+}
+
+/* Override maroon text colors to vermelho */
+.text-maroon-400,
+.text-maroon-300 {
+  color: #CC0000 !important;
+}
+
+/* Override gold to amarelo */
+.text-gold-400,
+.text-gold-300 {
+  color: #CC5500 !important;
+}
+
+/* Spinner override */
+.animate-spin {
+  border-color: #D1D1D1 !important;
+  border-top-color: #CC0000 !important;
+}
+
+/* ================================================================
+   SIDEBAR BRUTAL OVERRIDES
+   ================================================================ */
+
+aside {
+  background: #FFFFFF !important;
+  border-right: 3px solid #111111 !important;
+  backdrop-filter: none !important;
+}
+
+aside [class*="border-b"],
+aside [class*="border-t"] {
+  border-color: #111111 !important;
+}
+
+/* Active nav link brutal style */
+aside a[class*="from-maroon"] {
+  background: #FFD700 !important;
+  color: #111111 !important;
+  border: 2px solid #111111 !important;
+  box-shadow: 2px 2px 0 #111111;
+}
+
+/* ================================================================
+   HEADER BRUTAL OVERRIDE
+   ================================================================ */
+
+header[class*="border-b"] {
+  border-bottom: 2px solid #111111 !important;
+  background: #FFFFFF !important;
+}
+
+/* ================================================================
+   ACCENT COLOR BLOCKS
+   ================================================================ */
+
+.brutal-accent-vermelho { background: #CC0000; color: #FFFFFF; }
+.brutal-accent-amarelo { background: #FFD700; color: #111111; }
+.brutal-accent-azul { background: #000080; color: #FFFFFF; }
+.brutal-accent-verde { background: #4B5320; color: #FFFFFF; }
+.brutal-accent-laranja { background: #CC5500; color: #FFFFFF; }
+
+/* ================================================================
+   SELECTION
+   ================================================================ */
+
+::selection {
+  background: #FFD700;
+  color: #111111;
+}
+
+/* ================================================================
+   LAYOUT & SIDEBAR RESPONSIVE
+   ================================================================ */
+
+.layout-sidebar {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 260px;
+  background: #FFFFFF;
+  border-right: 3px solid #111111;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease-out;
+}
+
+@media (max-width: 1023px) {
+  .layout-sidebar.sidebar-closed {
+    transform: translateX(-100%);
+  }
+  .layout-sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+  .mobile-only {
+    display: block !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .layout-sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    transform: none !important;
+    flex-shrink: 0;
+  }
+  .mobile-only {
+    display: none !important;
+  }
+}
+

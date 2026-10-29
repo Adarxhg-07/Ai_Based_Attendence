@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, GraduationCap, BookOpen, Building2, ClipboardList, TrendingUp } from 'lucide-react';
+import { Users, GraduationCap, BookOpen, Building2, ClipboardList } from 'lucide-react';
 import api from '../../lib/api';
 import { PageHeader } from '../../components/ui/PageHeader';
 
@@ -10,6 +10,8 @@ interface Stats {
   classrooms: number;
   attendanceSessions: number;
 }
+
+const ACCENT_COLORS = ['#CC0000', '#000080', '#FFD700', '#4B5320', '#CC5500'];
 
 export default function Dashboard() {
   const [stats, setStats] = useState<Stats>({
@@ -52,47 +54,26 @@ export default function Dashboard() {
   }, []);
 
   const statCards = [
-    {
-      title: 'Total Students',
-      value: stats.totalStudents,
-      icon: Users,
-      gradient: 'from-maroon-600/20 to-maroon-800/10',
-      iconColor: 'text-maroon-400',
-    },
-    {
-      title: 'Total Teachers',
-      value: stats.totalTeachers,
-      icon: GraduationCap,
-      gradient: 'from-emerald-400/20 to-emerald-600/10',
-      iconColor: 'text-emerald-400',
-    },
-    {
-      title: 'Active Courses',
-      value: stats.activeCourses,
-      icon: BookOpen,
-      gradient: 'from-amber-400/20 to-amber-600/10',
-      iconColor: 'text-amber-400',
-    },
-    {
-      title: 'Classrooms',
-      value: stats.classrooms,
-      icon: Building2,
-      gradient: 'from-violet-400/20 to-violet-600/10',
-      iconColor: 'text-violet-400',
-    },
-    {
-      title: 'Attendance Sessions',
-      value: stats.attendanceSessions,
-      icon: ClipboardList,
-      gradient: 'from-maroon-600/20 to-maroon-700/10',
-      iconColor: 'text-maroon-400',
-    },
+    { title: 'Students', value: stats.totalStudents, icon: Users },
+    { title: 'Teachers', value: stats.totalTeachers, icon: GraduationCap },
+    { title: 'Courses', value: stats.activeCourses, icon: BookOpen },
+    { title: 'Classrooms', value: stats.classrooms, icon: Building2 },
+    { title: 'Sessions', value: stats.attendanceSessions, icon: ClipboardList },
   ];
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-maroon-600"></div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+        <div
+          style={{
+            width: 48,
+            height: 48,
+            border: '4px solid #D1D1D1',
+            borderTop: '4px solid #CC0000',
+            borderRadius: '50%',
+          }}
+          className="animate-spin"
+        />
       </div>
     );
   }
@@ -104,21 +85,55 @@ export default function Dashboard() {
         description="Overview of the Smart Attendance Management System"
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-        {statCards.map((stat) => {
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3" style={{ gap: '1.25rem', marginTop: '1.5rem' }}>
+        {statCards.map((stat, i) => {
           const Icon = stat.icon;
+          const accent = ACCENT_COLORS[i % ACCENT_COLORS.length];
           return (
             <div
               key={stat.title}
-              className="glass rounded-xl p-6 hover:bg-white/[0.08] transition-all duration-200"
+              className="animate-brutal-enter stagger-item"
+              style={{
+                background: '#FFFFFF',
+                border: '3px solid #111111',
+                borderRadius: '0.5rem',
+                boxShadow: '5px 5px 0 #111111',
+                padding: '1.5rem',
+                transition: 'all 0.2s ease-out',
+                cursor: 'default',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = '7px 7px 0 #111111';
+                e.currentTarget.style.transform = 'translate(-1px, -1px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = '5px 5px 0 #111111';
+                e.currentTarget.style.transform = 'none';
+              }}
             >
-              <div className="flex items-center justify-between">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
-                  <p className="text-white/40 text-sm">{stat.title}</p>
-                  <p className="text-white/95 text-3xl font-bold mt-2">{stat.value}</p>
+                  <p style={{ color: '#36454F', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    {stat.title}
+                  </p>
+                  <p style={{ color: '#111111', fontSize: '2.5rem', fontWeight: 700, marginTop: '0.25rem', lineHeight: 1 }}>
+                    {stat.value}
+                  </p>
                 </div>
-                <div className={`bg-gradient-to-br ${stat.gradient} p-3 rounded-lg`}>
-                  <Icon className={`h-8 w-8 ${stat.iconColor}`} />
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    background: accent,
+                    border: '2px solid #111',
+                    borderRadius: '0.375rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '2px 2px 0 #111',
+                  }}
+                >
+                  <Icon size={24} color={accent === '#FFD700' ? '#111' : '#FFF'} strokeWidth={2.5} />
                 </div>
               </div>
             </div>

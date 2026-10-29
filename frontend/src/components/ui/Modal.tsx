@@ -24,16 +24,59 @@ export function Modal({ open, isOpen, onClose, title, children, size = 'md' }: M
   const widthClass = size === 'sm' ? 'max-w-md' : size === 'lg' ? 'max-w-3xl' : 'max-w-xl';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className={`relative glass-lg w-full ${widthClass} max-h-[90vh] flex flex-col`}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08]">
-          <h2 className="text-lg font-semibold text-white/90">{title}</h2>
-          <button onClick={onClose} className="text-white/30 hover:text-white/60 transition-colors p-1 rounded-lg hover:bg-white/[0.06]">
-            <X size={20} />
+    <div style={{ position: 'fixed', inset: 0, zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+      {/* Overlay */}
+      <div
+        style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)' }}
+        onClick={onClose}
+      />
+      {/* Modal card — BRUTAL */}
+      <div
+        className={`${widthClass}`}
+        style={{
+          position: 'relative',
+          width: '100%',
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column',
+          background: '#FFFFFF',
+          border: '3px solid #111111',
+          borderRadius: '0.5rem',
+          boxShadow: '8px 8px 0 #111111',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '1rem 1.5rem',
+            borderBottom: '3px solid #111111',
+            background: '#111111',
+          }}
+        >
+          <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#FFFFFF', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            {title}
+          </h2>
+          <button
+            onClick={onClose}
+            style={{
+              background: '#CC0000',
+              color: '#FFFFFF',
+              border: '2px solid #FFFFFF',
+              borderRadius: '0.375rem',
+              padding: '0.25rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.15s ease-out',
+            }}
+          >
+            <X size={16} />
           </button>
         </div>
-        <div className="px-6 py-4 overflow-y-auto flex-1">
+        <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1 }}>
           {children}
         </div>
       </div>
