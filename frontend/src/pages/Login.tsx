@@ -2,7 +2,8 @@ import { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getErrorMessage } from '../lib/api';
-import { Eye, EyeOff, Scan, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, Scan, ArrowRight, KeyRound, Copy, Check, ShieldAlert } from 'lucide-react';
+import { Modal } from '../components/ui/Modal';
 
 export default function Login() {
   const { login } = useAuth();
@@ -12,6 +13,8 @@ export default function Login() {
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [copiedPin, setCopiedPin] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -111,7 +114,7 @@ export default function Login() {
             />
           </div>
 
-          <div style={{ marginBottom: '1.5rem' }}>
+          <div style={{ marginBottom: '0.75rem' }}>
             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#111', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
               Password
             </label>
@@ -142,6 +145,26 @@ export default function Login() {
                 {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
+          </div>
+
+          {/* Forgot Password Button */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1.25rem' }}>
+            <button
+              type="button"
+              onClick={() => setShowForgotModal(true)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#2563EB',
+                fontSize: '0.8125rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                textDecoration: 'underline',
+                padding: '2px 4px',
+              }}
+            >
+              Forgot Password?
+            </button>
           </div>
 
           <button
@@ -213,6 +236,101 @@ export default function Login() {
           POWERED BY AI FACE RECOGNITION
         </p>
       </div>
+
+      {/* Forgot Password Modal */}
+      <Modal
+        isOpen={showForgotModal}
+        onClose={() => setShowForgotModal(false)}
+        title="Reset / Recover Account Password"
+        size="md"
+      >
+        <div className="space-y-4 p-2 text-sm text-neutral-800">
+          <div className="flex items-start gap-3 p-3 bg-amber-50 border-2 border-black rounded-lg">
+            <KeyRound size={22} className="text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <h4 className="font-black text-black text-sm">Testing / Default Credentials</h4>
+              <p className="text-xs text-neutral-700 mt-1">
+                For demo testing accounts, the system default password is:
+              </p>
+              <div className="mt-2 flex items-center gap-2">
+                <code className="px-2.5 py-1 bg-white border border-black rounded font-mono font-black text-xs">
+                  Password123!
+                </code>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText('Password123!');
+                    setCopiedPin(true);
+                    setTimeout(() => setCopiedPin(false), 2000);
+                  }}
+                  className="px-2 py-1 bg-neutral-100 hover:bg-neutral-200 border border-neutral-400 rounded text-xs font-bold flex items-center gap-1 cursor-pointer"
+                >
+                  {copiedPin ? <Check size={12} className="text-green-600" /> : <Copy size={12} />}
+                  {copiedPin ? 'Copied' : 'Copy'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-3 bg-neutral-50 border-2 border-black rounded-lg space-y-2">
+            <h4 className="font-black text-black text-xs uppercase tracking-wider flex items-center gap-1.5">
+              <ShieldAlert size={14} className="text-blue-600" />
+              For Faculty / Teachers:
+            </h4>
+            <p className="text-xs text-neutral-600 leading-relaxed">
+              If your password was created by your administrator, ask your <strong>University Admin</strong> to view or reset your password directly in <strong>Admin Portal → Teachers → Edit / Reset Password</strong>. Password updates take effect immediately without requiring email verification.
+            </p>
+          </div>
+
+          <div className="p-3 bg-neutral-100 border border-neutral-300 rounded text-xs text-neutral-700 space-y-2">
+            <div className="flex justify-between items-center">
+              <span>Admin Demo: <strong>admin@university.edu</strong> / <strong>admin123</strong></span>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('admin@university.edu');
+                  setPassword('admin123');
+                  setShowForgotModal(false);
+                }}
+                className="px-2.5 py-1 bg-red-600 text-white font-bold rounded text-xs hover:bg-red-700 cursor-pointer shadow-xs"
+              >
+                Fill Admin Demo
+              </button>
+            </div>
+            <div className="flex justify-between items-center pt-1 border-t border-neutral-200">
+              <span>Teacher Demo: <strong>teacher@university.edu</strong> / <strong>teacher123</strong></span>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('teacher@university.edu');
+                  setPassword('teacher123');
+                  setShowForgotModal(false);
+                }}
+                className="px-2.5 py-1 bg-blue-600 text-white font-bold rounded text-xs hover:bg-blue-700 cursor-pointer shadow-xs"
+              >
+                Fill Teacher Demo
+              </button>
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <button
+              type="button"
+              onClick={() => setShowForgotModal(false)}
+              className="px-5 py-2 rounded text-xs font-black cursor-pointer hover:bg-neutral-100 transition-all"
+              style={{
+                background: '#FFFFFF',
+                color: '#111111',
+                border: '2px solid #111111',
+                boxShadow: '3px 3px 0 #111111',
+                fontWeight: 900,
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -12,10 +12,19 @@ export class StudentsService {
     phone?: string;
     departmentId?: string;
     batchId?: string;
+    section?: string;
   }) {
+    let metadataObj: Record<string, any> = {};
+    if (data.section) {
+      metadataObj.section = data.section.toUpperCase();
+    }
+
+    const { section, ...createData } = data;
+
     const student = await prisma.student.create({
       data: {
-        ...data,
+        ...createData,
+        metadata: Object.keys(metadataObj).length > 0 ? JSON.stringify(metadataObj) : undefined,
         isActive: true,
       },
       include: {
@@ -117,7 +126,18 @@ export class StudentsService {
       prisma.student.count({ where: where as any }),
     ]);
 
-    return { items, totalItems };
+    const mappedItems = items.map((student) => {
+      let section = 'A';
+      if (student.metadata) {
+        try {
+          const parsed = JSON.parse(student.metadata);
+          if (parsed.section) section = parsed.section;
+        } catch {}
+      }
+      return { ...student, section };
+    });
+
+    return { items: mappedItems, totalItems };
   }
 
   async findById(id: string) {
@@ -145,7 +165,16 @@ export class StudentsService {
     });
 
     if (!student) throw new NotFoundError('Student not found');
-    return student;
+
+    let section = 'A';
+    if (student.metadata) {
+      try {
+        const parsed = JSON.parse(student.metadata);
+        if (parsed.section) section = parsed.section;
+      } catch {}
+    }
+
+    return { ...student, section };
   }
 
   async update(id: string, data: {
@@ -155,18 +184,36 @@ export class StudentsService {
     phone?: string;
     departmentId?: string;
     batchId?: string;
+    section?: string;
     isActive?: boolean;
   }) {
-    await this.findById(id); // throws if not found
+    const existing = await this.findById(id); // throws if not found
 
-    return prisma.student.update({
+    let meta: Record<string, any> = {};
+    if (existing.metadata) {
+      try {
+        meta = JSON.parse(existing.metadata);
+      } catch {}
+    }
+    if (data.section) {
+      meta.section = data.section.toUpperCase();
+    }
+
+    const { section, ...updateData } = data;
+
+    const updated = await prisma.student.update({
       where: { id },
-      data,
+      data: {
+        ...updateData,
+        metadata: Object.keys(meta).length > 0 ? JSON.stringify(meta) : existing.metadata,
+      },
       include: {
         department: true,
         batch: true,
       },
     });
+
+    return { ...updated, section: meta.section || 'A' };
   }
 
   async delete(id: string) {

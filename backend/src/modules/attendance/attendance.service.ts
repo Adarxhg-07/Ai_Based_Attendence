@@ -116,6 +116,111 @@ export class AttendanceService {
     return weekly;
   }
 
+  async getAllocatedCourses(userIdOrTeacherId: string) {
+    const teacher = await prisma.teacher.findFirst({
+      where: { OR: [{ id: userIdOrTeacherId }, { userId: userIdOrTeacherId }], ...notDeleted() },
+    });
+    if (!teacher) throw new NotFoundError('Teacher not found');
+
+    const offerings = await prisma.courseOffering.findMany({
+      where: {
+        teacherAssignments: { some: { teacherId: teacher.id } },
+        ...notDeleted(),
+      },
+      include: {
+        course: {
+          include: { department: true },
+        },
+        session: true,
+        schedules: {
+          where: { ...notDeleted(), isActive: true },
+          include: { classroom: true },
+          orderBy: { startTime: 'asc' },
+        },
+        studentEnrollments: {
+          where: {
+            status: 'enrolled',
+            student: { deletedAt: null, isActive: true },
+          },
+          include: {
+            student: {
+              select: {
+                id: true,
+                registrationNumber: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            studentEnrollments: {
+              where: {
+                status: 'enrolled',
+                student: { deletedAt: null, isActive: true },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return offerings;
+  }
+
+  async startSessionForOffering(offeringId: string, userId: string) {
+    const teacher = await prisma.teacher.findFirst({
+      where: { OR: [{ id: userId }, { userId }], ...notDeleted() },
+    });
+    if (!teacher) throw new NotFoundError('Teacher not found');
+
+    const offering = await prisma.courseOffering.findFirst({
+      where: {
+        id: offeringId,
+        teacherAssignments: { some: { teacherId: teacher.id } },
+        ...notDeleted(),
+      },
+      include: {
+        schedules: { where: { ...notDeleted(), isActive: true } },
+      },
+    });
+
+    if (!offering) {
+      throw new ForbiddenError('You are not assigned to this class offering');
+    }
+
+    const today = DAY_MAP[new Date().getDay()];
+    let targetSchedule = offering.schedules.find((s) => s.dayOfWeek === today);
+
+    if (!targetSchedule) {
+      if (offering.schedules.length > 0) {
+        targetSchedule = offering.schedules[0];
+      } else {
+        const classrooms = await prisma.classroom.findMany({ where: { ...notDeleted() }, take: 1 });
+        const now = new Date();
+        const startH = String(now.getHours()).padStart(2, '0');
+        const startM = String(now.getMinutes()).padStart(2, '0');
+        const endH = String((now.getHours() + 1) % 24).padStart(2, '0');
+
+        targetSchedule = await prisma.schedule.create({
+          data: {
+            courseOfferingId: offering.id,
+            classroomId: classrooms[0]?.id,
+            dayOfWeek: today,
+            startTime: `${startH}:${startM}`,
+            endTime: `${endH}:${startM}`,
+            isActive: true,
+          },
+        });
+      }
+    }
+
+    return this.startSession(targetSchedule.id, userId);
+  }
+
   async getClassDetails(scheduleId: string, teacherId: string) {
     const teacher = await prisma.teacher.findFirst({
       where: { OR: [{ id: teacherId }, { userId: teacherId }], ...notDeleted() },

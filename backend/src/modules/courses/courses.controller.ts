@@ -52,6 +52,24 @@ export class CoursesController {
 
   // ── Course Offerings ──────────────────────────────────────────────────
 
+  findAllOfferings = asyncHandler(async (req: Request, res: Response) => {
+    const offerings = await coursesService.findAllOfferings({
+      courseId: req.query.courseId as string | undefined,
+      search: req.query.search as string | undefined,
+    });
+    return sendSuccess(res, offerings);
+  });
+
+  getBatches = asyncHandler(async (req: Request, res: Response) => {
+    const batches = await coursesService.getBatches();
+    return sendSuccess(res, batches);
+  });
+
+  getDepartments = asyncHandler(async (req: Request, res: Response) => {
+    const departments = await coursesService.getDepartments();
+    return sendSuccess(res, departments);
+  });
+
   createOffering = asyncHandler(async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -97,6 +115,16 @@ export class CoursesController {
 
     const result = await coursesService.enrollStudents(req.params.offeringId, req.body.studentIds);
     return sendCreated(res, result, 'Students enrolled successfully');
+  });
+
+  enrollBatch = asyncHandler(async (req: Request, res: Response) => {
+    const { batchId } = req.body;
+    if (!batchId) {
+      return sendError(res, 400, 'BAD_REQUEST', 'batchId is required');
+    }
+
+    const result = await coursesService.enrollBatch(req.params.offeringId, batchId);
+    return sendCreated(res, result, 'Students from batch enrolled successfully');
   });
 
   getEnrollments = asyncHandler(async (req: Request, res: Response) => {

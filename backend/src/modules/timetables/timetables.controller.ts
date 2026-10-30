@@ -16,6 +16,22 @@ export class TimetablesController {
     return sendCreated(res, result, 'Schedule created successfully');
   });
 
+  createBulk = asyncHandler(async (req: Request, res: Response) => {
+    const { courseOfferingId, classroomId, daysOfWeek, startTime, endTime } = req.body;
+    if (!courseOfferingId || !daysOfWeek || !startTime || !endTime) {
+      return sendError(res, 400, 'BAD_REQUEST', 'Missing required fields for bulk schedule creation');
+    }
+
+    const result = await timetablesService.createBulk({
+      courseOfferingId,
+      classroomId,
+      daysOfWeek,
+      startTime,
+      endTime,
+    });
+    return sendCreated(res, result, 'Weekly schedules created successfully');
+  });
+
   findAll = asyncHandler(async (req: Request, res: Response) => {
     const pagination = parsePagination(req);
     const filters = {
@@ -54,6 +70,8 @@ export class TimetablesController {
       courseOfferingId: req.query.courseOfferingId as string | undefined,
       classroomId: req.query.classroomId as string | undefined,
       teacherId: req.query.teacherId as string | undefined,
+      departmentId: req.query.departmentId as string | undefined,
+      section: req.query.section as string | undefined,
     };
 
     const weekly = await timetablesService.getWeeklySchedule(filters);

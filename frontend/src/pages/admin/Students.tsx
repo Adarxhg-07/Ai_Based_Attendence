@@ -12,6 +12,7 @@ interface Student {
   lastName: string;
   email: string;
   phone?: string;
+  section?: string;
   isActive: boolean;
   _count?: {
     faceImages: number;
@@ -24,6 +25,7 @@ interface StudentFormData {
   lastName: string;
   email: string;
   phone: string;
+  section: string;
 }
 
 export default function Students() {
@@ -40,7 +42,8 @@ export default function Students() {
     firstName: '',
     lastName: '',
     email: '',
-    phone: ''
+    phone: '',
+    section: 'A'
   });
   const [saving, setSaving] = useState(false);
 
@@ -76,7 +79,8 @@ export default function Students() {
       firstName: '',
       lastName: '',
       email: '',
-      phone: ''
+      phone: '',
+      section: 'A'
     });
     setFaceImages(null);
     setModalOpen(true);
@@ -89,7 +93,8 @@ export default function Students() {
       firstName: student.firstName,
       lastName: student.lastName,
       email: student.email,
-      phone: student.phone || ''
+      phone: student.phone || '',
+      section: student.section || 'A'
     });
     setFaceImages(null);
     setModalOpen(true);
@@ -185,6 +190,15 @@ export default function Students() {
       key: 'name',
       label: 'Name',
       render: (student: Student) => `${student.firstName} ${student.lastName}`
+    },
+    {
+      key: 'section',
+      label: 'Section',
+      render: (student: Student) => (
+        <span className="px-2 py-0.5 bg-neutral-100 border border-black rounded text-xs font-bold text-black uppercase">
+          {student.section || 'A'}
+        </span>
+      )
     },
     {
       key: 'email',
@@ -365,16 +379,35 @@ export default function Students() {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-white/60 mb-1">
-              Phone
-            </label>
-            <input
-              type="tel"
-              value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              className="glass-input w-full px-3 py-2"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-white/60 mb-1">
+                Phone
+              </label>
+              <input
+                type="tel"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                className="glass-input w-full px-3 py-2"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-white/60 mb-1">
+                Section *
+              </label>
+              <select
+                required
+                value={form.section}
+                onChange={(e) => setForm({ ...form, section: e.target.value })}
+                className="glass-input w-full px-3 py-2 font-bold"
+              >
+                <option value="A">Section A</option>
+                <option value="B">Section B</option>
+                <option value="C">Section C</option>
+                <option value="D">Section D</option>
+                <option value="E">Section E</option>
+              </select>
+            </div>
           </div>
 
           {/* Facial Training Photos Input */}

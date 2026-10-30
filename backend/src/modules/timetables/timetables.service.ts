@@ -67,6 +67,31 @@ export class TimetablesService {
     });
   }
 
+  async createBulk(data: {
+    courseOfferingId: string;
+    classroomId?: string;
+    daysOfWeek: string[];
+    startTime: string;
+    endTime: string;
+  }) {
+    if (!Array.isArray(data.daysOfWeek) || data.daysOfWeek.length === 0) {
+      throw new BadRequestError('At least one day of the week must be selected');
+    }
+
+    const createdSlots = [];
+    for (const day of data.daysOfWeek) {
+      const slot = await this.create({
+        courseOfferingId: data.courseOfferingId,
+        classroomId: data.classroomId,
+        dayOfWeek: day,
+        startTime: data.startTime,
+        endTime: data.endTime,
+      });
+      createdSlots.push(slot);
+    }
+    return createdSlots;
+  }
+
   async findAll(
     pagination: ParsedPagination,
     filters: {
@@ -205,15 +230,27 @@ export class TimetablesService {
     courseOfferingId?: string;
     classroomId?: string;
     teacherId?: string;
+    departmentId?: string;
+    section?: string;
   }) {
     const where: Record<string, unknown> = { ...notDeleted(), isActive: true };
 
     if (filters.courseOfferingId) where.courseOfferingId = filters.courseOfferingId;
     if (filters.classroomId) where.classroomId = filters.classroomId;
+
+    // Build courseOffering filter object for nested conditions
+    const offeringFilter: Record<string, unknown> = {};
     if (filters.teacherId) {
-      where.courseOffering = {
-        teacherAssignments: { some: { teacherId: filters.teacherId } },
-      };
+      offeringFilter.teacherAssignments = { some: { teacherId: filters.teacherId } };
+    }
+    if (filters.departmentId) {
+      offeringFilter.course = { departmentId: filters.departmentId };
+    }
+    if (filters.section) {
+      offeringFilter.section = filters.section;
+    }
+    if (Object.keys(offeringFilter).length > 0) {
+      where.courseOffering = offeringFilter;
     }
 
     const schedules = await prisma.schedule.findMany({
@@ -221,7 +258,7 @@ export class TimetablesService {
       include: {
         courseOffering: {
           include: {
-            course: true,
+            course: { include: { department: true } },
             session: true,
             teacherAssignments: {
               include: {

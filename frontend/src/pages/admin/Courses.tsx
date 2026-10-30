@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Search } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Pencil, Trash2, Search, Layers } from 'lucide-react';
 import api, { getErrorMessage } from '../../lib/api';
 import { DataTable } from '../../components/ui/DataTable';
 import { Modal } from '../../components/ui/Modal';
@@ -25,6 +26,7 @@ interface CourseFormData {
 }
 
 export default function Courses() {
+  const navigate = useNavigate();
   const [courses, setCourses] = useState<Course[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -182,6 +184,13 @@ export default function Courses() {
             className="glass-input w-full pl-10 pr-4 py-2"
           />
         </div>
+        <button
+          onClick={() => navigate('/admin/classes')}
+          className="flex items-center gap-2 px-4 py-2 border-2 border-black rounded-lg font-bold text-sm bg-white hover:bg-neutral-100 transition shadow-sm cursor-pointer"
+        >
+          <Layers size={18} />
+          Class Allocations
+        </button>
         <button
           onClick={handleCreate}
           className="btn-gradient flex items-center gap-2 px-4 py-2 rounded-lg"

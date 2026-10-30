@@ -25,6 +25,9 @@ export const createStudentValidation = [
     .optional()
     .isUUID()
     .withMessage('Invalid batch ID'),
+  body('section')
+    .optional()
+    .isString().trim(),
 ];
 
 export const updateStudentValidation = [
@@ -46,6 +49,9 @@ export const updateStudentValidation = [
   body('batchId')
     .optional()
     .isUUID(),
+  body('section')
+    .optional()
+    .isString().trim(),
   body('isActive')
     .optional()
     .isBoolean(),

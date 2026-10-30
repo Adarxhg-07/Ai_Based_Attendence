@@ -15,6 +15,7 @@ export const createTeacherValidation = [
   body('employeeId').optional().isString(),
   body('departmentId').optional().isUUID(),
   body('designation').optional().isString(),
+  body('password').optional().isString().isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
 ];
 
 export const updateTeacherValidation = [
@@ -25,4 +26,5 @@ export const updateTeacherValidation = [
   body('departmentId').optional().isUUID(),
   body('designation').optional().isString(),
   body('isActive').optional().isBoolean(),
+  body('password').optional().isString().isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
 ];

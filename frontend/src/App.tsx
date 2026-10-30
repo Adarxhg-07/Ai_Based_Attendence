@@ -6,6 +6,7 @@ import Login from './pages/Login';
 
 // Admin pages
 import AdminDashboard from './pages/admin/Dashboard';
+import ClassAllocations from './pages/admin/ClassAllocations';
 import Students from './pages/admin/Students';
 import Teachers from './pages/admin/Teachers';
 import Courses from './pages/admin/Courses';
@@ -47,6 +48,7 @@ export default function App() {
           <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
             <Route element={<Layout />}>
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/classes" element={<ClassAllocations />} />
               <Route path="/admin/students" element={<Students />} />
               <Route path="/admin/teachers" element={<Teachers />} />
               <Route path="/admin/courses" element={<Courses />} />

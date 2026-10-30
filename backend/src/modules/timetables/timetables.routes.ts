@@ -9,6 +9,7 @@ const router = Router();
 router.use(authMiddleware, adminOnly);
 
 router.get('/weekly', timetablesController.getWeekly);
+router.post('/bulk', timetablesController.createBulk);
 router.post('/', createScheduleValidation, timetablesController.create);
 router.get('/', timetablesController.findAll);
 router.get('/:id', timetablesController.findById);

@@ -21,11 +21,10 @@ export const updateCourseValidation = [
 ];
 
 export const createOfferingValidation = [
-  body('sessionId')
-    .isUUID()
-    .withMessage('Session ID is required'),
+  body('sessionId').optional().isUUID().withMessage('Session ID must be a valid UUID'),
   body('section').optional().isString().trim().notEmpty(),
   body('maxCapacity').optional().isInt({ min: 1, max: 500 }),
+  body('teacherId').optional().isUUID().withMessage('Teacher ID must be a valid UUID'),
 ];
 
 export const updateOfferingValidation = [

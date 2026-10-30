@@ -15,6 +15,12 @@ export class AttendanceController {
     return sendSuccess(res, schedule);
   });
 
+  getAllocatedCourses = asyncHandler(async (req: Request, res: Response) => {
+    const userId = (req as AuthenticatedRequest).user!.id;
+    const courses = await attendanceService.getAllocatedCourses(userId);
+    return sendSuccess(res, courses);
+  });
+
   getWeeklySchedule = asyncHandler(async (req: Request, res: Response) => {
     const userId = (req as AuthenticatedRequest).user!.id;
     const schedule = await attendanceService.getWeeklySchedule(userId);
@@ -32,6 +38,12 @@ export class AttendanceController {
   startSession = asyncHandler(async (req: Request, res: Response) => {
     const userId = (req as AuthenticatedRequest).user!.id;
     const session = await attendanceService.startSession(req.params.scheduleId, userId);
+    return sendCreated(res, session, 'Attendance session started');
+  });
+
+  startSessionForOffering = asyncHandler(async (req: Request, res: Response) => {
+    const userId = (req as AuthenticatedRequest).user!.id;
+    const session = await attendanceService.startSessionForOffering(req.params.offeringId, userId);
     return sendCreated(res, session, 'Attendance session started');
   });
 

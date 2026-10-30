@@ -4,10 +4,12 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Building2,
   Calendar, ClipboardList, FileText, LogOut, Menu, X, User, Scan, FlaskConical,
+  Layers,
 } from 'lucide-react';
 
 const adminLinks = [
   { to: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/admin/classes', icon: Layers, label: 'Class Allocations' },
   { to: '/admin/students', icon: Users, label: 'Students' },
   { to: '/admin/teachers', icon: GraduationCap, label: 'Teachers' },
   { to: '/admin/courses', icon: BookOpen, label: 'Courses' },

@@ -15,9 +15,10 @@ export class TeachersService {
     employeeId?: string;
     departmentId?: string;
     designation?: string;
+    password?: string;
   }) {
-    // Generate a temporary password
-    const tempPassword = crypto.randomBytes(8).toString('hex');
+    // Use specified password or generate a default/temporary one
+    const tempPassword = data.password && data.password.trim() ? data.password.trim() : crypto.randomBytes(8).toString('hex');
     const passwordHash = await bcrypt.hash(tempPassword, SALT_ROUNDS);
     const username = data.email.split('@')[0];
 
@@ -44,7 +45,7 @@ export class TeachersService {
       },
     });
 
-    return { ...user, temporaryPassword: tempPassword };
+    return { ...user, temporaryPassword: tempPassword, password: tempPassword };
   }
 
   async findAll(
@@ -124,6 +125,7 @@ export class TeachersService {
     departmentId?: string;
     designation?: string;
     isActive?: boolean;
+    password?: string;
   }) {
     const teacher = await this.findById(id);
 
@@ -135,6 +137,10 @@ export class TeachersService {
     if (data.lastName !== undefined) userUpdates.lastName = data.lastName;
     if (data.phone !== undefined) userUpdates.phone = data.phone;
     if (data.isActive !== undefined) userUpdates.isActive = data.isActive;
+    if (data.password && data.password.trim()) {
+      userUpdates.passwordHash = await bcrypt.hash(data.password.trim(), SALT_ROUNDS);
+      userUpdates.passwordChangedAt = new Date();
+    }
     if (data.employeeId !== undefined) teacherUpdates.employeeId = data.employeeId;
     if (data.departmentId !== undefined) teacherUpdates.departmentId = data.departmentId;
     if (data.designation !== undefined) teacherUpdates.designation = data.designation;

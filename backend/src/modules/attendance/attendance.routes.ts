@@ -9,12 +9,14 @@ const router = Router();
 
 router.use(authMiddleware, teacherOnly);
 
-// Schedule
+// Schedule & Allocated Courses
+router.get('/courses', attendanceController.getAllocatedCourses);
 router.get('/schedule/today', attendanceController.getTodaySchedule);
 router.get('/schedule/weekly', attendanceController.getWeeklySchedule);
 router.get('/classes/:scheduleId', attendanceController.getClassDetails);
 
 // Attendance sessions
+router.post('/offerings/:offeringId/attendance/start', attendanceController.startSessionForOffering);
 router.post('/classes/:scheduleId/attendance/start', attendanceController.startSession);
 router.post('/attendance/:sessionId/process-image', uploadAttendanceImage, attendanceController.processImage);
 router.put('/attendance/:sessionId/students/:studentId', updateAttendanceValidation, attendanceController.updateStudentAttendance);

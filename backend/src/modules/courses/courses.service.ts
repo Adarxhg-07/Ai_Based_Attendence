@@ -118,36 +118,150 @@ export class CoursesService {
 
   // ── Course Offerings ──────────────────────────────────────────────────
 
+  async findAllOfferings(filters?: { courseId?: string; search?: string }) {
+    const where: any = { ...notDeleted() };
+    if (filters?.courseId) {
+      where.courseId = filters.courseId;
+    }
+    if (filters?.search) {
+      where.OR = [
+        { section: { contains: filters.search } },
+        { course: { name: { contains: filters.search } } },
+        { course: { code: { contains: filters.search } } },
+      ];
+    }
+
+    return prisma.courseOffering.findMany({
+      where,
+      include: {
+        course: { select: { id: true, code: true, name: true, creditHours: true, departmentId: true } },
+        session: true,
+        teacherAssignments: {
+          orderBy: { isPrimary: 'desc' },
+          include: {
+            teacher: {
+              include: {
+                user: { select: { id: true, firstName: true, lastName: true, email: true } },
+                department: { select: { id: true, code: true, name: true } },
+              },
+            },
+          },
+        },
+        schedules: {
+          where: { ...notDeleted(), isActive: true },
+          include: {
+            classroom: { select: { id: true, roomId: true, name: true, building: true } },
+          },
+        },
+        _count: {
+          select: {
+            studentEnrollments: {
+              where: { status: 'enrolled' },
+            },
+            schedules: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getBatches() {
+    return prisma.batch.findMany({
+      where: { ...notDeleted(), isActive: true },
+      include: {
+        _count: {
+          select: {
+            students: {
+              where: { ...notDeleted(), isActive: true },
+            },
+          },
+        },
+      },
+      orderBy: { year: 'desc' },
+    });
+  }
+
+  async getDepartments() {
+    return prisma.department.findMany({
+      where: { ...notDeleted() },
+      orderBy: { name: 'asc' },
+    });
+  }
+
   async createOffering(courseId: string, data: {
-    sessionId: string;
+    sessionId?: string;
     section?: string;
     maxCapacity?: number;
+    teacherId?: string;
   }) {
     await this.findById(courseId);
 
-    return prisma.courseOffering.create({
+    let sessionId = data.sessionId;
+    if (!sessionId) {
+      const activeSession =
+        (await prisma.academicSession.findFirst({
+          where: { isCurrent: true, ...notDeleted() },
+        })) ||
+        (await prisma.academicSession.findFirst({
+          where: { ...notDeleted() },
+          orderBy: { createdAt: 'desc' },
+        }));
+
+      if (!activeSession) {
+        const currentYear = new Date().getFullYear();
+        const createdSession = await prisma.academicSession.create({
+          data: {
+            name: `Academic Year ${currentYear}`,
+            year: currentYear,
+            semester: 'SPRING',
+            startDate: new Date(`${currentYear}-01-01`),
+            endDate: new Date(`${currentYear}-12-31`),
+            isCurrent: true,
+          },
+        });
+        sessionId = createdSession.id;
+      } else {
+        sessionId = activeSession.id;
+      }
+    }
+
+    const offering = await prisma.courseOffering.create({
       data: {
         courseId,
-        sessionId: data.sessionId,
-        section: data.section ?? 'A',
-        maxCapacity: data.maxCapacity ?? 50,
+        sessionId,
+        section: data.section || 'A',
+        maxCapacity: data.maxCapacity ?? 60,
       },
       include: {
         course: true,
         session: true,
-        _count: {
-          select: {
-            studentEnrollments: {
-              where: {
-                status: 'enrolled',
-                student: { deletedAt: null, isActive: true },
-              },
-            },
-            teacherAssignments: true,
-          },
-        },
       },
     });
+
+    if (data.teacherId) {
+      try {
+        const teacher = await prisma.teacher.findFirst({
+          where: {
+            OR: [{ id: data.teacherId }, { userId: data.teacherId }],
+            ...notDeleted(),
+          },
+        });
+        if (teacher) {
+          await prisma.teacherCourseAssignment.create({
+            data: {
+              teacherId: teacher.id,
+              courseOfferingId: offering.id,
+              isPrimary: true,
+            },
+          });
+        }
+      } catch (err) {
+        // Teacher assignment already exists or failed gracefully
+      }
+    }
+
+    return this.findOfferingById(offering.id);
   }
 
   async findOfferingsByCoursId(courseId: string) {
@@ -180,6 +294,7 @@ export class CoursesService {
         course: true,
         session: true,
         teacherAssignments: {
+          orderBy: { isPrimary: 'desc' },
           include: {
             teacher: {
               include: { user: { select: { firstName: true, lastName: true, email: true } } },
@@ -301,18 +416,48 @@ export class CoursesService {
     });
   }
 
+  async enrollBatch(offeringId: string, batchId: string) {
+    await this.findOfferingById(offeringId);
+    const students = await prisma.student.findMany({
+      where: { batchId, ...notDeleted(), isActive: true },
+      select: { id: true },
+    });
+
+    if (students.length === 0) {
+      throw new BadRequestError('No active students found in this batch');
+    }
+
+    const studentIds = students.map((s) => s.id);
+    return this.enrollStudents(offeringId, studentIds);
+  }
+
   // ── Teacher Assignments ───────────────────────────────────────────────
 
   async assignTeacher(offeringId: string, teacherId: string, isPrimary: boolean = true) {
     await this.findOfferingById(offeringId);
 
     const teacher = await prisma.teacher.findFirst({
-      where: { id: teacherId, ...notDeleted() },
+      where: {
+        OR: [{ id: teacherId }, { userId: teacherId }],
+        ...notDeleted(),
+      },
     });
     if (!teacher) throw new NotFoundError('Teacher not found');
 
+    if (isPrimary) {
+      await prisma.teacherCourseAssignment.deleteMany({
+        where: {
+          courseOfferingId: offeringId,
+        },
+      });
+    }
+
     return prisma.teacherCourseAssignment.create({
-      data: { teacherId, courseOfferingId: offeringId, isPrimary },
+      data: {
+        teacherId: teacher.id,
+        courseOfferingId: offeringId,
+        isPrimary: true,
+      },
       include: {
         teacher: {
           include: { user: { select: { firstName: true, lastName: true, email: true } } },
@@ -322,8 +467,16 @@ export class CoursesService {
   }
 
   async removeTeacherAssignment(offeringId: string, teacherId: string) {
+    const teacher = await prisma.teacher.findFirst({
+      where: {
+        OR: [{ id: teacherId }, { userId: teacherId }],
+        ...notDeleted(),
+      },
+    });
+    const resolvedTeacherId = teacher ? teacher.id : teacherId;
+
     const assignment = await prisma.teacherCourseAssignment.findFirst({
-      where: { teacherId, courseOfferingId: offeringId },
+      where: { teacherId: resolvedTeacherId, courseOfferingId: offeringId },
     });
 
     if (!assignment) throw new NotFoundError('Teacher assignment not found');
